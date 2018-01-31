@@ -1,0 +1,12 @@
+#TYPE   DATABASE        USER            CIDR-ADDRESS            METHOD
+host    all             all             127.0.0.1/32            trust
+host    all             all             ::1/128                 trust
+<% @routes.each do |r| %>
+host    template1       opscode-pgsql   <%= r.to_s %>         trust
+host    postgres        opscode-pgsql   <%= r.to_s %>         trust
+host    replication     opscode-pgsql   <%= r.to_s %>         trust
+host    opscode_chef    opscode_chef    <%= r.to_s %>         trust
+host    druid           druid           <%= r.to_s %>         trust
+host    redborder       redborder       <%= r.to_s %>         trust
+<% end %>
+

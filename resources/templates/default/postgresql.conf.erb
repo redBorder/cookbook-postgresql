@@ -1,0 +1,46 @@
+#------------------------------------------------------------------------------
+# PostgreSQL configuration file
+#------------------------------------------------------------------------------
+# Memory on this node: 65974324
+# MAX memory used:     49480743
+# Memory asigned:      1449
+listen_addresses = '*'
+port = 5432 
+max_connections = 1000
+shared_buffers = 362MB
+work_mem = 8MB # min 64kB
+checkpoint_timeout = 5min               # range 30s-1h, default 5min
+checkpoint_completion_target = 0.9      # checkpoint target duration, 0.0 - 1.0, default 0.5
+checkpoint_warning = 30s                # 0 disables, default 30s
+effective_cache_size = 724MB 
+datestyle = 'iso, mdy'
+default_text_search_config = 'pg_catalog.english'
+
+log_destination = 'stderr'          
+logging_collector = on             
+log_directory = 'pg_log'
+log_filename = 'postgresql-%a.log'
+log_truncate_on_rotation = on
+log_rotation_age = 1d
+log_rotation_size = 0
+log_timezone = 'UTC'
+log_line_prefix = '%t' 
+
+datestyle = 'iso, dmy'
+timezone = 'UTC'
+lc_messages = 'en_US.UTF-8'             # locale for system error message
+lc_monetary = 'en_US.UTF-8'             # locale for monetary formatting
+lc_numeric = 'en_US.UTF-8'              # locale for number formatting
+lc_time = 'en_US.UTF-8'                 # locale for time formatting
+
+max_standby_archive_delay = 60000
+max_standby_streaming_delay = 60000
+
+# Options for Master/Multi-Slave
+#checkpoint_segments = 16
+#wal_level = hot_standby
+#archive_mode = on
+#archive_command = 'cd .'
+#max_wal_senders = 100    
+#wal_keep_segments = 32
+#hot_standby = on

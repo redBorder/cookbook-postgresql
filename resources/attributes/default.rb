@@ -1,2 +1,4 @@
 #Flags
-default["example"]["attribute1"] = ""
+default["postgresql"]["mode"] = "single"
+default["postgresql"]["registered"] = false
+

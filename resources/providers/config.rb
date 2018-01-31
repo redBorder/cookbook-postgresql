@@ -1,46 +1,128 @@
-# Cookbook Name:: example
+
+# Cookbook Name:: postgresql
 #
 # Provider:: config
 #
 
-action :add do #Usually used to install and configure something
+include Postgresql::Helper
+
+action :add do
   begin
-     # ... your code here ...
 
-     template "PATH/template1" do
-       source "template1.erb"
-       cookbook "example"
-       #...
-     end
+    user = new_resource.user
+    postgresql_port = new_resource.postgresql_port
+    cdomain = new_resource.cdomain
+    routes = local_routes()
 
-     Chef::Log.info("Example cookbook has been processed")
+    yum_package "postgresql" do
+      action :upgrade
+      flush_cache [:before]
+    end
+
+    yum_package "postgresql-server" do
+      action :upgrade
+      flush_cache [:before]
+    end
+
+    user user do
+      action :create
+      system true
+    end
+
+    unless File.exist? "/var/lib/pgsql/data/postgresql.conf"
+        execute 'postgresql_initdb' do
+            user user
+            command 'initdb -D /var/lib/pgsql/data'
+            action :run
+        end	
+    end
+
+    template "/var/lib/pgsql/data/postgresql.conf" do
+      source "postgresql.conf.erb"
+      owner user
+      group user
+      mode 0644
+      cookbook "postgresql"
+      notifies :restart, "service[postgresql]"
+    end
+
+    template "/var/lib/pgsql/data/pg_hba.conf" do
+      source "pg_hba.conf.erb"
+      owner user
+      group user
+      mode 0644
+      cookbook "postgresql"
+      variables(:routes => routes)
+      notifies :restart, "service[postgresql]"
+    end
+
+    service "postgresql" do
+      service_name "postgresql"
+      ignore_failure true
+      supports :status => true, :reload => true, :restart => true, :enable => true
+      action [:start, :enable]
+    end
+
+     Chef::Log.info("PostgreSQL cookbook has been processed")
   rescue => e
     Chef::Log.error(e.message)
   end
 end
 
-action :remove do #Usually used to uninstall something
+action :remove do
   begin
-     # ... your code here ...
-     Chef::Log.info("Example cookbook has been processed")
+    
+    service "postgresql" do
+      service_name "postgresql"
+      ignore_failure true
+      supports :status => true, :enable => true
+      action [:stop, :disable]
+    end
+
+    yum_package "postgresql-server" do
+      action :remove
+    end
+
+    Chef::Log.info("PostgreSQL cookbook has been processed")
   rescue => e
     Chef::Log.error(e.message)
   end
 end
 
-action :register do #Usually used to register in consul
+action :register do
   begin
-     # ... your code here ...
-     Chef::Log.info("Example cookbook has been processed")
+    if !node["postgresql"]["registered"]
+      query = {}
+      query["ID"] = "postgresql-#{node["hostname"]}"
+      query["Name"] = "postgresql"
+      query["Address"] = "#{node["ipaddress"]}"
+      query["Port"] = 5432
+      json_query = Chef::JSONCompat.to_json(query)
+
+      execute 'Register service in consul' do
+         command "curl http://localhost:8500/v1/agent/service/register -d '#{json_query}' &>/dev/null"
+         action :nothing
+      end.run_action(:run)
+
+      node.set["postgresql"]["registered"] = true
+      Chef::Log.info("Postgresql service has been registered to consul")
+    end
   rescue => e
     Chef::Log.error(e.message)
   end
 end
 
-action :deregister do #Usually used to deregister from consul
+action :deregister do
   begin
-     # ... your code here ...
-     Chef::Log.info("Example cookbook has been processed")
+    if node["postgresql"]["registered"]
+      execute 'Deregister service in consul' do
+        command "curl http://localhost:8500/v1/agent/service/deregister/postgresql-#{node["hostname"]} &>/dev/null"
+        action :nothing
+      end.run_action(:run)
+
+      node.set["postgresql"]["registered"] = false
+      Chef::Log.info("Postgresql service has been deregistered from consul")
+    end
   rescue => e
     Chef::Log.error(e.message)
   end

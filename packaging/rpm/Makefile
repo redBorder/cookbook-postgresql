@@ -1,4 +1,4 @@
-PACKAGE_NAME?=	cookbook-example
+PACKAGE_NAME?=	cookbook-postgresql
 
 VERSION?=	$(shell git describe --abbrev=6 --tags HEAD --always | sed 's/-/_/g')
 
