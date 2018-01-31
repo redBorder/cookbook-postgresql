@@ -29,7 +29,7 @@ action :add do
       system true
     end
 
-    unless File.exist? "/var/lib/pgsql/data/postgresql.conf"
+    unless ::File.exist? "/var/lib/pgsql/data/postgresql.conf"
         execute 'postgresql_initdb' do
             user user
             command 'initdb -D /var/lib/pgsql/data'
