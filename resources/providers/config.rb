@@ -30,6 +30,7 @@ action :add do
     end
 
     unless ::File.exist? "/var/lib/pgsql/data/postgresql.conf"
+        Chef::Log.info("Initializing postgresql service")
         execute 'postgresql_initdb' do
             user user
             command 'initdb -D /var/lib/pgsql/data'
