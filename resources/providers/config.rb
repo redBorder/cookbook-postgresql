@@ -53,7 +53,7 @@ action :add do
       group user
       mode 0644
       cookbook "postgresql"
-      variables(:routes => routes)
+      variables(:routes => routes, :user => user)
       notifies :restart, "service[postgresql]"
     end
 
