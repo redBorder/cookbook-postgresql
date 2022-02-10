@@ -41,12 +41,6 @@ action :add do
             command 'initdb -D /var/lib/pgsql/data'
             action :run
         end	
-        Chef::Log.info("Creating replication user")
-        execute 'postgresql_create_replication_user' do
-            user user
-            command 'psql -c "CREATE USER rep REPLICATION LOGIN CONNECTION LIMIT 100;"'
-            action :run
-        end	
     end
 
     template "/var/lib/pgsql/data/postgresql.conf" do
