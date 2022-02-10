@@ -24,6 +24,11 @@ action :add do
       flush_cache [:before]
     end
 
+    yum_package "redborder-postgresql" do
+      action :upgrade
+      flush_cache [:before]
+    end
+
     user user do
       action :create
       system true
@@ -34,6 +39,12 @@ action :add do
         execute 'postgresql_initdb' do
             user user
             command 'initdb -D /var/lib/pgsql/data'
+            action :run
+        end	
+        Chef::Log.info("Creating replication user")
+        execute 'postgresql_create_replication_user' do
+            user user
+            command 'psql -c "CREATE USER rep REPLICATION LOGIN CONNECTION LIMIT 100;"'
             action :run
         end	
     end
@@ -59,6 +70,13 @@ action :add do
 
     service "postgresql" do
       service_name "postgresql"
+      ignore_failure true
+      supports :status => true, :reload => true, :restart => true, :enable => true
+      action [:start, :enable]
+    end
+
+    service "redborder-postgresql" do
+      service_name "redborder-postgresql"
       ignore_failure true
       supports :status => true, :reload => true, :restart => true, :enable => true
       action [:start, :enable]
