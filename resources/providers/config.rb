@@ -115,6 +115,7 @@ action :register do
       execute 'Register service in consul' do
          command "curl -X PUT http://localhost:8500/v1/agent/service/register -d '#{json_query}' &>/dev/null"
          action :nothing
+         notifies :restart, "service[redborder-postgresql]"
       end.run_action(:run)
 
       node.set["postgresql"]["registered"] = true
