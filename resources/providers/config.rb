@@ -24,6 +24,11 @@ action :add do
       flush_cache [:before]
     end
 
+    yum_package "redborder-postgresql" do
+      action :upgrade
+      flush_cache [:before]
+    end
+
     user user do
       action :create
       system true
@@ -59,6 +64,13 @@ action :add do
 
     service "postgresql" do
       service_name "postgresql"
+      ignore_failure true
+      supports :status => true, :reload => true, :restart => true, :enable => true
+      action [:start, :enable]
+    end
+
+    service "redborder-postgresql" do
+      service_name "redborder-postgresql"
       ignore_failure true
       supports :status => true, :reload => true, :restart => true, :enable => true
       action [:start, :enable]
@@ -103,6 +115,7 @@ action :register do
       execute 'Register service in consul' do
          command "curl -X PUT http://localhost:8500/v1/agent/service/register -d '#{json_query}' &>/dev/null"
          action :nothing
+         notifies :restart, "service[redborder-postgresql]"
       end.run_action(:run)
 
       node.set["postgresql"]["registered"] = true
