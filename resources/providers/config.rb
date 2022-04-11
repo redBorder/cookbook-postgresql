@@ -32,6 +32,7 @@ action :add do
     user user do
       action :create
       system true
+      shell '/sbin/nologin'
     end
 
     unless ::File.exist? "/var/lib/pgsql/data/postgresql.conf"
