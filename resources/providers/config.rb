@@ -14,17 +14,17 @@ action :add do
     cdomain = new_resource.cdomain
     routes = local_routes()
 
-    yum_package "postgresql" do
+    dnf_package "postgresql" do
       action :upgrade
       flush_cache [:before]
     end
 
-    yum_package "postgresql-server" do
+    dnf_package "postgresql-server" do
       action :upgrade
       flush_cache [:before]
     end
 
-    yum_package "redborder-postgresql" do
+    dnf_package "redborder-postgresql" do
       action :upgrade
       flush_cache [:before]
     end
@@ -92,7 +92,7 @@ action :remove do
       action [:stop, :disable]
     end
 
-    yum_package "postgresql-server" do
+    dnf_package "postgresql-server" do
       action :remove
     end
 
