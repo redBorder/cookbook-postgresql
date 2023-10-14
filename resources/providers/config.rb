@@ -29,9 +29,10 @@ action :add do
       flush_cache [:before]
     end
 
-    user user do
-      action :create
-      system true
+    execute "create_user" do
+      command "/usr/sbin/useradd -r postgres"
+      ignore_failure true
+      not_if "getent passwd postgres"
     end
 
     unless ::File.exist? "/var/lib/pgsql/data/postgresql.conf"
