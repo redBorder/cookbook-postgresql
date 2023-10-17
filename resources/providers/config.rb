@@ -106,8 +106,8 @@ end
 action :register do
   begin
 
-    service "postgresql" do
-      service_name "postgresql"
+    service "redborder-postgresql" do
+      service_name "redborder-postgresql"
       ignore_failure true
       supports :status => true, :enable => true
       action :nothing
