@@ -105,6 +105,14 @@ end
 
 action :register do
   begin
+
+    service "postgresql" do
+      service_name "postgresql"
+      ignore_failure true
+      supports :status => true, :enable => true
+      action :nothing
+    end
+
     if !node["postgresql"]["registered"]
       query = {}
       query["ID"] = "postgresql-#{node["hostname"]}"
