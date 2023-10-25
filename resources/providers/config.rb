@@ -127,7 +127,7 @@ action :register do
          notifies :restart, "service[redborder-postgresql]"
       end.run_action(:run)
 
-      node.default["postgresql"]["registered"] = true
+      node.normal["postgresql"]["registered"] = true
       Chef::Log.info("Postgresql service has been registered to consul")
     end
   rescue => e
@@ -143,7 +143,7 @@ action :deregister do
         action :nothing
       end.run_action(:run)
 
-      node.default["postgresql"]["registered"] = false
+      node.normal["postgresql"]["registered"] = false
       Chef::Log.info("Postgresql service has been deregistered from consul")
     end
   rescue => e
