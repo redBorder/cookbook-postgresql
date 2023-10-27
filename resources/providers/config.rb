@@ -14,24 +14,25 @@ action :add do
     cdomain = new_resource.cdomain
     routes = local_routes()
 
-    yum_package "postgresql" do
+    dnf_package "postgresql" do
       action :upgrade
       flush_cache [:before]
     end
 
-    yum_package "postgresql-server" do
+    dnf_package "postgresql-server" do
       action :upgrade
       flush_cache [:before]
     end
 
-    yum_package "redborder-postgresql" do
+    dnf_package "redborder-postgresql" do
       action :upgrade
       flush_cache [:before]
     end
 
-    user user do
-      action :create
-      system true
+    execute "create_user" do
+      command "/usr/sbin/useradd -r postgres"
+      ignore_failure true
+      not_if "getent passwd postgres"
     end
 
     unless ::File.exist? "/var/lib/pgsql/data/postgresql.conf"
@@ -92,7 +93,7 @@ action :remove do
       action [:stop, :disable]
     end
 
-    yum_package "postgresql-server" do
+    dnf_package "postgresql-server" do
       action :remove
     end
 
@@ -104,6 +105,14 @@ end
 
 action :register do
   begin
+
+    service "redborder-postgresql" do
+      service_name "redborder-postgresql"
+      ignore_failure true
+      supports :status => true, :enable => true
+      action :nothing
+    end
+
     if !node["postgresql"]["registered"]
       query = {}
       query["ID"] = "postgresql-#{node["hostname"]}"
@@ -118,7 +127,7 @@ action :register do
          notifies :restart, "service[redborder-postgresql]"
       end.run_action(:run)
 
-      node.set["postgresql"]["registered"] = true
+      node.normal["postgresql"]["registered"] = true
       Chef::Log.info("Postgresql service has been registered to consul")
     end
   rescue => e
@@ -134,7 +143,7 @@ action :deregister do
         action :nothing
       end.run_action(:run)
 
-      node.set["postgresql"]["registered"] = false
+      node.normal["postgresql"]["registered"] = false
       Chef::Log.info("Postgresql service has been deregistered from consul")
     end
   rescue => e
