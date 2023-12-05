@@ -13,6 +13,7 @@ action :add do
     postgresql_port = new_resource.postgresql_port
     cdomain = new_resource.cdomain
     routes = local_routes()
+    ipaddress = new_resource.ipaddress
 
     dnf_package "postgresql" do
       action :upgrade
@@ -85,7 +86,8 @@ end
 
 action :remove do
   begin
-    
+    ipaddress = new_resource.ipaddress
+
     service "postgresql" do
       service_name "postgresql"
       ignore_failure true
@@ -105,6 +107,7 @@ end
 
 action :register do
   begin
+    ipaddress = new_resource.ipaddress
 
     service "redborder-postgresql" do
       service_name "redborder-postgresql"
@@ -117,7 +120,7 @@ action :register do
       query = {}
       query["ID"] = "postgresql-#{node["hostname"]}"
       query["Name"] = "postgresql"
-      query["Address"] = "#{node["ipaddress"]}"
+      query["Address"] = ipaddress
       query["Port"] = 5432
       json_query = Chef::JSONCompat.to_json(query)
 
@@ -137,6 +140,8 @@ end
 
 action :deregister do
   begin
+    ipaddress = new_resource.ipaddress
+
     if node["postgresql"]["registered"]
       execute 'Deregister service in consul' do
         command "curl -X PUT http://localhost:8500/v1/agent/service/deregister/postgresql-#{node["hostname"]} &>/dev/null"
