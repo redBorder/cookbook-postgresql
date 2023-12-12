@@ -41,17 +41,17 @@ action :add do
             user user
             command 'initdb -D /var/lib/pgsql/data'
             action :run
-        end	
-    end
-
-    template "/var/lib/pgsql/data/postgresql.conf" do
-      source "postgresql.conf.erb"
-      owner user
-      group user
-      mode 0644
-      cookbook "postgresql"
-      notifies :restart, "service[postgresql]"
-    end
+        end
+        	
+        template "/var/lib/pgsql/data/postgresql.conf" do
+          source "postgresql.conf.erb"
+          owner user
+          group user
+          mode 0644
+          cookbook "postgresql"
+          notifies :restart, "service[postgresql]"
+        end
+      end
 
     template "/var/lib/pgsql/data/pg_hba.conf" do
       source "pg_hba.conf.erb"
