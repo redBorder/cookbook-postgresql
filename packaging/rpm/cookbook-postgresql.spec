@@ -47,6 +47,8 @@ esac
 %doc
 
 %changelog
+* Fri Dec 15 2023 David Vanhoucke <dvanhoucke@redborder.com> - 0.1.7-1
+- Add support for sync ip
 * Fri Dec 15 2023 David Vanhoucke <dvanhoucke@redborder.com> - 0.1.6-1
 - Add support for grand access cript
 * Fri Dec 15 2023 David Vanhoucke <dvanhoucke@redborder.com> - 0.1.5-1
