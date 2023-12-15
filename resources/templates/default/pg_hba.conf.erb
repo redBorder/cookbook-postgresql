@@ -9,4 +9,12 @@ host    redborder       redborder       <%= r.to_s %>         trust
 host    replication     rep             <%= r.to_s %>         trust
 host    radius          radius          <%= r.to_s %>         trust
 <% end %>
-
+<% if !node["redborder"]["manager"].nil? and !node["redborder"]["manager"]["database"].nil? and !node["redborder"]["manager"]["database"]["grant"].nil? %>
+<% node["redborder"]["manager"]["database"]["grant"].each do |x| %>
+<% if x["network"] != @netsync and x["network"] != "127.0.0.1/32" %>
+host    druid           druid           <%= x["network"] %>     <%= x["mode"] %>
+host    redborder       redborder       <%= x["network"] %>     <%= x["mode"] %>
+host    radius          radius          <%= x["network"] %>     <%= x["mode"] %>
+<% end %>
+<% end %>
+<% end %>
