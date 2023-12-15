@@ -47,8 +47,8 @@ esac
 %doc
 
 %changelog
-* Fri Dec 15 2023 Miguel Negrón <manegron@redborder.com> - 0.1.5-1
-- Fix master HA
+* Fri Dec 15 2023 David Vanhoucke <dvanhoucke@redborder.com> - 0.1.5-1
+- Fix service HA
 * Fri Jan 07 2022 David Vanhoucke <dvanhoucke@redborder.com> - 0.1.2-1
 - change register to consul
 * Thu Feb 1 2018 Juan J. Prieto <jjprieto@redborder.com> - 0.0.2-1
