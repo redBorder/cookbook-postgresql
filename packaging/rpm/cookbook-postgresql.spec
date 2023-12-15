@@ -47,6 +47,8 @@ esac
 %doc
 
 %changelog
+* Fri Dec 15 2023 David Vanhoucke <dvanhoucke@redborder.com> - 0.1.6-1
+- Add support for grand access cript
 * Fri Dec 15 2023 David Vanhoucke <dvanhoucke@redborder.com> - 0.1.5-1
 - Fix service HA
 * Fri Jan 07 2022 David Vanhoucke <dvanhoucke@redborder.com> - 0.1.2-1
