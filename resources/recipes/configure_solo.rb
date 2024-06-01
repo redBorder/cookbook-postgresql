@@ -1,3 +1,3 @@
-postgresql_config "config" do
+postgresql_config 'config' do
   action [:add]
 end
