@@ -131,8 +131,6 @@ end
 
 action :deregister do
   begin
-    ipaddress = new_resource.ipaddress
-
     if node['postgresql']['registered']
       execute 'Deregister service in consul' do
         command "curl -X PUT http://localhost:8500/v1/agent/service/deregister/postgresql-#{node['hostname']} &>/dev/null"
