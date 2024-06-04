@@ -1,5 +1,13 @@
 cookbook-postgresql CHANGELOG
-=============================
+===============
+
+## 0.1.8
+
+  - Miguel Negrón
+    - [f09d70e] Improvement/fix lint (#13)
+    - [2314f90] Update README.md
+    - [bcb80ae] Update rpm.yml
+    - [e545b30] Update metadata.rb
 
 This file is used to list changes made in each version of the example cookbook.
 
