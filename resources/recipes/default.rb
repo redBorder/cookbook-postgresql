@@ -1,13 +1,9 @@
-#
-# Cookbook Name:: postgresql
+# Cookbook:: postgresql
 # Recipe:: default
-#
-# Copyright 2016, YOUR_COMPANY_NAME
-#
-# All rights reserved - Do Not Redistribute
-#
+# Copyright:: 2024, redborder
+# License:: Affero General Public License, Version 3
 
-cookbook_postgresql_config "config" do
-  mystring "test"
+cookbook_postgresql_config 'config' do
+  mystring 'test'
   action :add
 end
