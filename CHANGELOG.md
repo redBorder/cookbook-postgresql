@@ -1,6 +1,22 @@
 cookbook-postgresql CHANGELOG
 ===============
 
+## 0.1.9
+
+  - Miguel Negrón
+    - [26399cc] Add pre and postun to clean the cookbook
+    - [f09d70e] Improvement/fix lint (#13)
+    - [2314f90] Update README.md
+    - [bcb80ae] Update rpm.yml
+    - [e545b30] Update metadata.rb
+  - nilsver
+    - [490325c] Release 0.1.8
+  - Miguel Negrón
+    - [f09d70e] Improvement/fix lint (#13)
+    - [2314f90] Update README.md
+    - [bcb80ae] Update rpm.yml
+    - [e545b30] Update metadata.rb
+
 ## 0.1.8
 
   - Miguel Negrón
