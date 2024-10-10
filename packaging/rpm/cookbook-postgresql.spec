@@ -23,6 +23,9 @@ chmod -R 0755 %{buildroot}/var/chef/cookbooks/postgresql
 install -D -m 0644 README.md %{buildroot}/var/chef/cookbooks/postgresql/README.md
 
 %pre
+if [ -d /var/chef/cookbooks/postgresql ]; then
+    rm -rf /var/chef/cookbooks/postgresql
+fi
 
 %post
 case "$1" in
@@ -36,6 +39,11 @@ case "$1" in
   ;;
 esac
 
+%postun
+# Deletes directory when uninstall the package
+if [ "$1" = 0 ] && [ -d /var/chef/cookbooks/postgresql ]; then
+  rm -rf /var/chef/cookbooks/postgresql
+fi
 
 %files
 %defattr(0755,root,root)
@@ -47,15 +55,23 @@ esac
 %doc
 
 %changelog
-* Fri Dec 15 2023 David Vanhoucke <dvanhoucke@redborder.com> - 0.1.7-1
+* Thu Oct 10 2024 Miguel Negrón <manegron@redborder.com>
+- Add pre and postun
+
+* Fri Dec 15 2023 David Vanhoucke <dvanhoucke@redborder.com>
 - Add support for sync ip
-* Fri Dec 15 2023 David Vanhoucke <dvanhoucke@redborder.com> - 0.1.6-1
+
+* Fri Dec 15 2023 David Vanhoucke <dvanhoucke@redborder.com>
 - Add support for grand access cript
-* Fri Dec 15 2023 David Vanhoucke <dvanhoucke@redborder.com> - 0.1.5-1
+
+* Fri Dec 15 2023 David Vanhoucke <dvanhoucke@redborder.com>
 - Fix service HA
-* Fri Jan 07 2022 David Vanhoucke <dvanhoucke@redborder.com> - 0.1.2-1
+
+* Fri Jan 07 2022 David Vanhoucke <dvanhoucke@redborder.com>
 - change register to consul
-* Thu Feb 1 2018 Juan J. Prieto <jjprieto@redborder.com> - 0.0.2-1
+
+* Thu Feb 1 2018 Juan J. Prieto <jjprieto@redborder.com>
 - Add post upgrade cookbook upload
-* Wed Jan 31 2018 Juan J. Prieto <jjprieto@redborder.com> - 0.0.1-1
+
+* Wed Jan 31 2018 Juan J. Prieto <jjprieto@redborder.com>
 - first spec version
