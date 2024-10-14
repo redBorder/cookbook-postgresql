@@ -66,6 +66,10 @@ action :add do
     end
 
     if virtual_ips['internal']['postgresql']['ip'].nil?
+      execute 'Removing postgresql service from /etc/hosts' do
+        command "sed -i 's/.*postgresql.*//g' /etc/hosts"
+      end
+      
       service 'redborder-postgresql' do
         service_name 'redborder-postgresql'
         ignore_failure true
