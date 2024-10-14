@@ -77,6 +77,9 @@ action :add do
         if is_recovery == 'f'
           Chef::Log.info('Node is the PostgreSQL master, updating Serf tag...')
           system('serf tags -set postgresql_role=master')
+        else
+          Chef::Log.info('Node is a PostgreSQL standby, updating Serf tag...')
+          system('serf tags -set postgresql_role=standby')
         end
       end
       action :run
