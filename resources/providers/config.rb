@@ -6,6 +6,7 @@ include Postgresql::Helper
 action :add do
   begin
     user = new_resource.user
+    virtual_ips = new_resource.virtual_ips
     routes = local_routes()
 
     dnf_package 'postgresql' do
@@ -64,11 +65,20 @@ action :add do
       action [:start, :enable]
     end
 
-    service 'redborder-postgresql' do
-      service_name 'redborder-postgresql'
-      ignore_failure true
-      supports status: true, reload: true, restart: true, enable: true
-      action [:start, :enable]
+    if virtual_ips['internal']['postgresql']['ip'].nil?
+      service 'redborder-postgresql' do
+        service_name 'redborder-postgresql'
+        ignore_failure true
+        supports status: true, reload: true, restart: true, enable: true
+        action [:start, :enable]
+      end
+    else
+      service 'redborder-postgresql' do
+        service_name 'redborder-postgresql'
+        ignore_failure true
+        supports status: true, reload: true, restart: true, enable: true
+        action [:stop, :disable]
+      end
     end
 
     ruby_block 'check_postgresql_master_status' do
