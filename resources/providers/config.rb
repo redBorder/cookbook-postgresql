@@ -71,6 +71,20 @@ action :add do
       action [:start, :enable]
     end
 
+    ruby_block 'check_postgresql_master_status' do
+      block do
+        is_recovery = `sudo -u postgres psql -h 127.0.0.1 -t -c "SELECT pg_is_in_recovery();" 2>/dev/null | tr -d ' \t\n\r'`
+        if is_recovery == 'f'
+          Chef::Log.info('Node is the PostgreSQL master, updating Serf tag...')
+          system('serf tags -set postgresql_role=master')
+        else
+          Chef::Log.info('Node is a PostgreSQL standby, updating Serf tag...')
+          system('serf tags -set postgresql_role=standby')
+        end
+      end
+      action :run
+    end
+
     Chef::Log.info('PostgreSQL cookbook has been processed')
   rescue => e
     Chef::Log.error(e.message)
