@@ -19,11 +19,6 @@ action :add do
       flush_cache [:before]
     end
 
-    dnf_package 'redborder-postgresql' do
-      action :upgrade
-      flush_cache [:before]
-    end
-
     execute 'create_user' do
       command '/usr/sbin/useradd -r postgres'
       ignore_failure true
@@ -65,25 +60,6 @@ action :add do
       action [:start, :enable]
     end
 
-    if virtual_ips['internal']['postgresql']['ip'].nil?
-      execute 'Removing postgresql service from /etc/hosts' do
-        command "sed -i 's/.*postgresql.*//g' /etc/hosts"
-      end
-      service 'redborder-postgresql' do
-        service_name 'redborder-postgresql'
-        ignore_failure true
-        supports status: true, reload: true, restart: true, enable: true
-        action [:start, :enable]
-      end
-    else
-      service 'redborder-postgresql' do
-        service_name 'redborder-postgresql'
-        ignore_failure true
-        supports status: true, reload: true, restart: true, enable: true
-        action [:stop, :disable]
-      end
-    end
-
     ruby_block 'check_postgresql_master_status' do
       block do
         is_recovery = `sudo -u postgres psql -h 127.0.0.1 -t -c "SELECT pg_is_in_recovery();" 2>/dev/null | tr -d ' \t\n\r'`
@@ -118,55 +94,6 @@ action :remove do
     end
 
     Chef::Log.info('PostgreSQL cookbook has been processed')
-  rescue => e
-    Chef::Log.error(e.message)
-  end
-end
-
-action :register do
-  begin
-    ipaddress = new_resource.ipaddress
-
-    service 'redborder-postgresql' do
-      service_name 'redborder-postgresql'
-      ignore_failure true
-      supports status: true, enable: true
-      action :nothing
-    end
-
-    unless node['postgresql']['registered']
-      query = {}
-      query['ID'] = "postgresql-#{node['hostname']}"
-      query['Name'] = 'postgresql'
-      query['Address'] = ipaddress
-      query['Port'] = 5432
-      json_query = Chef::JSONCompat.to_json(query)
-
-      execute 'Register service in consul' do
-        command "curl -X PUT http://localhost:8500/v1/agent/service/register -d '#{json_query}' &>/dev/null"
-        action :nothing
-        notifies :restart, 'service[redborder-postgresql]'
-      end.run_action(:run)
-
-      node.normal['postgresql']['registered'] = true
-      Chef::Log.info('Postgresql service has been registered to consul')
-    end
-  rescue => e
-    Chef::Log.error(e.message)
-  end
-end
-
-action :deregister do
-  begin
-    if node['postgresql']['registered']
-      execute 'Deregister service in consul' do
-        command "curl -X PUT http://localhost:8500/v1/agent/service/deregister/postgresql-#{node['hostname']} &>/dev/null"
-        action :nothing
-      end.run_action(:run)
-
-      node.normal['postgresql']['registered'] = false
-      Chef::Log.info('Postgresql service has been deregistered from consul')
-    end
   rescue => e
     Chef::Log.error(e.message)
   end
