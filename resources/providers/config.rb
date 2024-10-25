@@ -6,7 +6,6 @@ include Postgresql::Helper
 action :add do
   begin
     user = new_resource.user
-    virtual_ips = new_resource.virtual_ips
     routes = local_routes()
 
     dnf_package 'postgresql' do
