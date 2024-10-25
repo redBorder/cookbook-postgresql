@@ -97,3 +97,45 @@ action :remove do
     Chef::Log.error(e.message)
   end
 end
+
+action :register do
+  begin
+    ipaddress = new_resource.ipaddress
+
+    unless node['postgresql']['registered']
+      query = {}
+      query['ID'] = "postgresql-#{node['hostname']}"
+      query['Name'] = 'postgresql'
+      query['Address'] = ipaddress
+      query['Port'] = 5432
+      json_query = Chef::JSONCompat.to_json(query)
+
+      execute 'Register service in consul' do
+        command "curl -X PUT http://localhost:8500/v1/agent/service/register -d '#{json_query}' &>/dev/null"
+        action :nothing
+        notifies :restart, 'service[redborder-postgresql]'
+      end.run_action(:run)
+
+      node.normal['postgresql']['registered'] = true
+      Chef::Log.info('Postgresql service has been registered to consul')
+    end
+  rescue => e
+    Chef::Log.error(e.message)
+  end
+end
+
+action :deregister do
+  begin
+    if node['postgresql']['registered']
+      execute 'Deregister service in consul' do
+        command "curl -X PUT http://localhost:8500/v1/agent/service/deregister/postgresql-#{node['hostname']} &>/dev/null"
+        action :nothing
+      end.run_action(:run)
+
+      node.normal['postgresql']['registered'] = false
+      Chef::Log.info('Postgresql service has been deregistered from consul')
+    end
+  rescue => e
+    Chef::Log.error(e.message)
+  end
+end
