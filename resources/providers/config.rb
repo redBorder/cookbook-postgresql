@@ -87,6 +87,27 @@ action :add do
       action [:start, :enable]
     end
 
+    ruby_block 'check_postgresql_hosts' do
+      block do
+        hosts_file = '/etc/hosts'
+        hosts_content = ::File.read(hosts_file)
+    
+        unless hosts_content.include?('master.postgresql.service')
+          serf_output = `serf members`
+          master_node = serf_output.lines.find { |line| line.include?('postgresql_role=master') && line.include?('alive') }
+    
+          if master_node
+            master_ip = master_node.split[1].split(':')[0]
+            
+            ::File.open(hosts_file, 'a') do |file|
+              file.puts "#{master_ip} master.postgresql.service"
+            end
+            Chef::Log.info("Added #{master_ip} master.postgresql.service to /etc/hosts")
+          end
+      end
+      action :run
+    end
+
     ruby_block 'check_postgresql_master_status' do
       block do
         is_recovery = `sudo -u postgres psql -h 127.0.0.1 -t -c "SELECT pg_is_in_recovery();" 2>/dev/null | tr -d ' \t\n\r'`
