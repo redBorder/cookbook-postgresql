@@ -104,6 +104,7 @@ action :add do
             end
             Chef::Log.info("Added #{master_ip} master.postgresql.service to /etc/hosts")
           end
+        end
       end
       action :run
     end
