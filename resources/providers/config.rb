@@ -41,20 +41,12 @@ action :add do
         notifies :restart, 'service[postgresql]'
       end
 
-      master_node = nil
-
-      ruby_block 'find_postgresql_master' do
+      ruby_block 'sync_if_not_master' do
         block do
           serf_output = `serf members`
           master_node = serf_output.lines.find do |line|
             line.include?('alive') && line.include?('postgresql=ready') && line.include?('leader=ready')
           end
-        end
-        action :run
-      end
-
-      ruby_block 'sync_if_not_master' do
-        block do
           if master_node
             master_ip = master_node.split[1].split(':')[0]
             local_ips = `hostname -I`.split
