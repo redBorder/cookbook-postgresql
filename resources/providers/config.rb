@@ -84,7 +84,7 @@ action :add do
     rescue
       postgresql_vip = {}
     end
-    
+
     ruby_block 'check_postgresql_hosts' do
       block do
         hosts_file = '/etc/hosts'
