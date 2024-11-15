@@ -79,34 +79,33 @@ action :add do
       action [:start, :enable]
     end
 
+    begin
+      postgresql_vip = data_bag_item('rBglobal', 'ipvirtual-internal-postgresql')
+    rescue
+      postgresql_vip = {}
+    end
+    
     ruby_block 'check_postgresql_hosts' do
       block do
         hosts_file = '/etc/hosts'
         hosts_content = ::File.read(hosts_file)
         unless hosts_content.include?('master.postgresql.service')
-          serf_output = `serf members`
-          master_node = serf_output.lines.find { |line| line.include?('postgresql_role=master') && line.include?('alive') }
-          if master_node
-            master_ip = master_node.split[1].split(':')[0]
+          master_ip = nil
+          if postgresql_vip['ip']
+            master_ip = postgresql_vip['ip']
+          else
+            serf_output = `serf members`
+            master_node = serf_output.lines.find { |line| line.include?('postgresql=ready') && line.include?('alive') }
+            if master_node
+              master_ip = master_node.split[1].split(':')[0]
+            end
+          end
+          if master_ip
             ::File.open(hosts_file, 'a') do |file|
               file.puts "#{master_ip} master.postgresql.service"
             end
             Chef::Log.info("Added #{master_ip} master.postgresql.service to /etc/hosts")
           end
-        end
-      end
-      action :run
-    end
-
-    ruby_block 'check_postgresql_master_status' do
-      block do
-        is_recovery = `sudo -u postgres psql -h 127.0.0.1 -t -c "SELECT pg_is_in_recovery();" 2>/dev/null | tr -d ' \t\n\r'`
-        if is_recovery == 'f'
-          Chef::Log.info('Node is the PostgreSQL master, updating Serf tag...')
-          system('serf tags -set postgresql_role=master')
-        else
-          Chef::Log.info('Node is a PostgreSQL standby, updating Serf tag...')
-          system('serf tags -set postgresql_role=standby')
         end
       end
       action :run
