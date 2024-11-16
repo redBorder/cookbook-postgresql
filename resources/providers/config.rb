@@ -8,6 +8,12 @@ action :add do
     user = new_resource.user
     routes = local_routes()
 
+    begin
+      postgresql_vip = data_bag_item('rBglobal', 'ipvirtual-internal-postgresql')
+    rescue
+      postgresql_vip = {}
+    end
+
     dnf_package 'postgresql' do
       action :upgrade
       flush_cache [:before]
@@ -43,23 +49,26 @@ action :add do
 
       ruby_block 'sync_if_not_master' do
         block do
-          serf_output = `serf members`
-          master_node = serf_output.lines.find do |line|
-            line.include?('alive') && line.include?('postgresql=ready') && line.include?('leader=ready')
-          end
-          if master_node
-            master_ip = master_node.split[1].split(':')[0]
-            local_ips = `hostname -I`.split
+          unless postgresql_vip['ip']
+            serf_output = `serf members`
+            master_node = serf_output.lines.find do |line|
+              line.include?('alive') && line.include?('postgresql=ready') && line.include?('leader=ready')
+            end
 
-            unless local_ips.include?(master_ip)
-              sync_command = "rb_sync_from_master.sh #{master_ip}"
-              Chef::Log.info("Master node is: #{master_ip}. Syncing from master...")
-              system(sync_command)
+            if master_node
+              master_ip = master_node.split[1].split(':')[0]
+              local_ips = `hostname -I`.split
+      
+              if local_ips.exclude?(master_ip)
+                Chef::Log.info("Master node detected at: #{master_ip}. Syncing from master...")
+                sync_command = "rb_sync_from_master.sh #{master_ip}"
+                system(sync_command)
+              end
             end
           end
         end
         action :run
-      end
+      end      
     end
 
     template '/var/lib/pgsql/data/pg_hba.conf' do
@@ -77,12 +86,6 @@ action :add do
       ignore_failure true
       supports status: true, reload: true, restart: true, enable: true
       action [:start, :enable]
-    end
-
-    begin
-      postgresql_vip = data_bag_item('rBglobal', 'ipvirtual-internal-postgresql')
-    rescue
-      postgresql_vip = {}
     end
 
     ruby_block 'check_postgresql_hosts' do
