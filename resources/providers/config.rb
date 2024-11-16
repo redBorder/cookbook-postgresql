@@ -98,7 +98,6 @@ action :add do
           master_node = serf_output.lines.find { |line| line.include?('postgresql=ready') && line.include?('alive') }
           master_ip = master_node.split[1].split(':')[0] if master_node
         end
-    
         if master_ip
           hosts_content = ::File.read(hosts_file).lines.reject { |line| line.include?('postgresql') }
           hosts_content << "#{master_ip} master.postgresql.service\n"
@@ -108,7 +107,7 @@ action :add do
         end
       end
       action :run
-    end    
+    end
 
     Chef::Log.info('PostgreSQL cookbook has been processed')
   rescue => e
