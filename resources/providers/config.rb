@@ -58,7 +58,6 @@ action :add do
             if master_node
               master_ip = master_node.split[1].split(':')[0]
               local_ips = `hostname -I`.split
-      
               if local_ips.exclude?(master_ip)
                 Chef::Log.info("Master node detected at: #{master_ip}. Syncing from master...")
                 sync_command = "rb_sync_from_master.sh #{master_ip}"
@@ -68,7 +67,7 @@ action :add do
           end
         end
         action :run
-      end      
+      end
     end
 
     template '/var/lib/pgsql/data/pg_hba.conf' do
