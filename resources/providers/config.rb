@@ -90,28 +90,25 @@ action :add do
     ruby_block 'check_postgresql_hosts' do
       block do
         hosts_file = '/etc/hosts'
-        hosts_content = ::File.read(hosts_file)
-        unless hosts_content.include?('master.postgresql.service')
-          master_ip = nil
-          if postgresql_vip['ip']
-            master_ip = postgresql_vip['ip']
-          else
-            serf_output = `serf members`
-            master_node = serf_output.lines.find { |line| line.include?('postgresql=ready') && line.include?('alive') }
-            if master_node
-              master_ip = master_node.split[1].split(':')[0]
-            end
-          end
-          if master_ip
-            ::File.open(hosts_file, 'a') do |file|
-              file.puts "#{master_ip} master.postgresql.service"
-            end
-            Chef::Log.info("Added #{master_ip} master.postgresql.service to /etc/hosts")
+        master_ip = nil
+        if postgresql_vip['ip']
+          master_ip = postgresql_vip['ip']
+        else
+          serf_output = `serf members`
+          master_node = serf_output.lines.find { |line| line.include?('postgresql=ready') && line.include?('alive') }
+          master_ip = master_node.split[1].split(':')[0] if master_node
+        end
+    
+        if master_ip
+          hosts_content = ::File.read(hosts_file).lines.reject { |line| line.include?('postgresql') }
+          hosts_content << "#{master_ip} master.postgresql.service\n"
+          ::File.open(hosts_file, 'w') do |file|
+            file.puts hosts_content
           end
         end
       end
       action :run
-    end
+    end    
 
     Chef::Log.info('PostgreSQL cookbook has been processed')
   rescue => e
