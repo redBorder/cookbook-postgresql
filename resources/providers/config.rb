@@ -3,16 +3,16 @@
 
 include Postgresql::Helper
 
+begin
+  postgresql_vip = data_bag_item('rBglobal', 'ipvirtual-internal-postgresql')
+rescue
+  postgresql_vip = {}
+end
+
 action :add do
   begin
     user = new_resource.user
     routes = local_routes()
-
-    begin
-      postgresql_vip = data_bag_item('rBglobal', 'ipvirtual-internal-postgresql')
-    rescue
-      postgresql_vip = {}
-    end
 
     dnf_package 'postgresql' do
       action :upgrade
@@ -144,6 +144,8 @@ action :register do
       query['Name'] = 'postgresql'
       query['Address'] = ipaddress
       query['Port'] = 5432
+      query['Meta'] = {}
+      query['Meta']['ipvirtual-internal-postgresql'] = postgresql_vip['ip'] || ""
       json_query = Chef::JSONCompat.to_json(query)
 
       execute 'Register service in consul' do
