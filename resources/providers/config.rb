@@ -145,7 +145,7 @@ action :register do
       query['Address'] = ipaddress
       query['Port'] = 5432
       query['Meta'] = {}
-      query['Meta']['ipvirtual-internal-postgresql'] = postgresql_vip['ip'] || ""
+      query['Meta']['ipvirtual-internal-postgresql'] = postgresql_vip['ip'] || ''
       json_query = Chef::JSONCompat.to_json(query)
 
       execute 'Register service in consul' do
