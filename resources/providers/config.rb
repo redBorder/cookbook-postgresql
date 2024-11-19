@@ -58,7 +58,7 @@ action :add do
             if master_node
               master_ip = master_node.split[1].split(':')[0]
               local_ips = `hostname -I`.split
-              if local_ips.exclude?(master_ip)
+              unless local_ips.include?(master_ip)
                 Chef::Log.info("Master node detected at: #{master_ip}. Syncing from master...")
                 sync_command = "rb_sync_from_master.sh #{master_ip}"
                 system(sync_command)
