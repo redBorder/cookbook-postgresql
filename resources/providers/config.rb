@@ -50,20 +50,11 @@ action :add do
       ruby_block 'sync_if_not_master' do
         block do
           unless postgresql_vip['ip']
-            serf_output = `serf members`
-            master_node = serf_output.lines.find do |line|
-              line.include?('alive') && line.include?('postgresql=ready') && line.include?('leader=ready')
-            end
-
-            if master_node
-              master_name = master_node.split[0].split(':')[0]
-              master_ip = master_node.split[1].split(':')[0]
-              local_ips = `hostname -I`.split
-              unless local_ips.include?(master_ip)
-                Chef::Log.info("Master node detected at: #{master_name}. Syncing from master...")
-                sync_command = "rb_sync_from_master.sh #{master_name}"
-                system(sync_command)
-              end
+            master_ip = fetch_master_ip(postgresql_vip)
+            if master_ip
+              sync_if_not_master(master_ip)
+            else
+              Chef::Log.warn('No master IP found; skipping sync.')
             end
           end
         end
@@ -88,23 +79,28 @@ action :add do
       action [:start, :enable]
     end
 
+    ruby_block 'check_postgresql_master_status' do
+      block do
+        is_recovery = `sudo -u postgres psql -h 127.0.0.1 -t -c "SELECT pg_is_in_recovery();" 2>/dev/null | tr -d ' \t\n\r'`
+        if is_recovery == 'f'
+          Chef::Log.info('Node is the PostgreSQL master, updating Serf tag...')
+          system('serf tags -set postgresql_role=master')
+        else
+          Chef::Log.info('Node is a PostgreSQL standby, updating Serf tag...')
+          system('serf tags -set postgresql_role=standby')
+        end
+      end
+      action :run
+    end
+
     ruby_block 'check_postgresql_hosts' do
       block do
         hosts_file = '/etc/hosts'
-        master_ip = nil
-        if postgresql_vip['ip']
-          master_ip = postgresql_vip['ip']
-        else
-          serf_output = `serf members`
-          master_node = serf_output.lines.find { |line| line.include?('postgresql=ready') && line.include?('alive') }
-          master_ip = master_node.split[1].split(':')[0] if master_node
-        end
+        master_ip = fetch_master_ip(postgresql_vip)
         if master_ip
-          hosts_content = ::File.read(hosts_file).lines.reject { |line| line.include?('postgresql') }
-          hosts_content << "#{master_ip} master.postgresql.service\n"
-          ::File.open(hosts_file, 'w') do |file|
-            file.puts hosts_content
-          end
+          update_hosts_file(hosts_file, master_ip)
+        else
+          Chef::Log.warn('No master IP found for PostgreSQL.')
         end
       end
       action :run
