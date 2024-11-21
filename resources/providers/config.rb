@@ -105,7 +105,6 @@ action :add do
       end
       action :run
     end
-    
     node.normal['postgresql']['registered'] = false
     Chef::Log.info('PostgreSQL cookbook has been processed')
   rescue => e
