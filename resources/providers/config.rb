@@ -49,13 +49,11 @@ action :add do
 
       ruby_block 'sync_if_not_master' do
         block do
-          unless postgresql_vip['ip']
-            master_ip = fetch_master_ip(postgresql_vip)
-            if master_ip
-              sync_if_not_master(master_ip)
-            else
-              Chef::Log.warn('No master IP found; skipping sync.')
-            end
+          master_ip = fetch_master_ip(postgresql_vip)
+          if master_ip
+            sync_if_not_master(master_ip)
+          else
+            Chef::Log.warn('No master IP found; skipping sync.')
           end
         end
         action :run
