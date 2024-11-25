@@ -81,10 +81,8 @@ action :add do
       block do
         is_recovery = `sudo -u postgres psql -h 127.0.0.1 -t -c "SELECT pg_is_in_recovery();" 2>/dev/null | tr -d ' \t\n\r'`
         if is_recovery == 'f'
-          Chef::Log.info('Node is the PostgreSQL master, updating Serf tag...')
           system('serf tags -set postgresql_role=master')
         else
-          Chef::Log.info('Node is a PostgreSQL standby, updating Serf tag...')
           system('serf tags -set postgresql_role=standby')
         end
       end
