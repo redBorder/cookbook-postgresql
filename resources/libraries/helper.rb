@@ -32,13 +32,5 @@ module Postgresql
       ::File.open(hosts_file, 'w') { |file| file.puts hosts_content }
       Chef::Log.info("Updated /etc/hosts with master.postgresql.service pointing to #{master_ip}")
     end
-
-    def sync_if_not_master(master_ip)
-      local_ips = `hostname -I`.split
-      unless local_ips.include?(master_ip)
-        Chef::Log.info("Syncing from master at #{master_ip}...")
-        system("rb_sync_from_master.sh #{master_ip}")
-      end
-    end
   end
 end

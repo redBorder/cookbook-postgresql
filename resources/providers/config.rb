@@ -49,12 +49,13 @@ action :add do
 
       ruby_block 'sync_if_not_master' do
         block do
-          master_ip = fetch_master_ip(postgresql_vip)
-          if master_ip
-            sync_if_not_master(master_ip)
-          else
-            Chef::Log.warn('No master IP found; skipping sync.')
+          serf_output = `serf members`
+          master_node = serf_output.lines.find do |line|
+            line.include?('alive') && line.include?('postgresql_role=master')
           end
+          master_name = master_node.split[0]
+          Chef::Log.info("Syncing from master at #{master_name}...")
+          system("rb_sync_from_master.sh #{master_name}")
         end
         action :run
       end
