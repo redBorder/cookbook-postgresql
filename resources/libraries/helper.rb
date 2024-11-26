@@ -30,7 +30,6 @@ module Postgresql
       hosts_content = ::File.read(hosts_file).lines.reject { |line| line.include?('postgresql') }
       hosts_content << "#{master_ip} master.postgresql.service\n"
       ::File.open(hosts_file, 'w') { |file| file.puts hosts_content }
-      Chef::Log.info("Updated /etc/hosts with master.postgresql.service pointing to #{master_ip}")
     end
   end
 end
