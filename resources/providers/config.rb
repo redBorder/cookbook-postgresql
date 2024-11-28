@@ -3,16 +3,19 @@
 
 include Postgresql::Helper
 
-begin
-  postgresql_vip = data_bag_item('rBglobal', 'ipvirtual-internal-postgresql')
-rescue
-  postgresql_vip = {}
-end
-
 action :add do
   begin
     user = new_resource.user
-    routes = local_routes()
+    virtual_ip_file = new_resource.virtual_ip_file
+    routes = local_routes
+
+    begin
+      postgresql_vip = data_bag_item('rBglobal', 'ipvirtual-internal-postgresql')
+    rescue
+      postgresql_vip = {}
+    end
+
+    current_ip = postgresql_vip['ip'] || ''
 
     dnf_package 'postgresql' do
       action :upgrade
@@ -28,6 +31,15 @@ action :add do
       command '/usr/sbin/useradd -r postgres'
       ignore_failure true
       not_if 'getent passwd postgres'
+    end
+
+    template virtual_ip_file do
+      source 'pg_virtual_ip_registered.txt.erb'
+      owner 'root'
+      group 'root'
+      mode '0644'
+      cookbook 'postgresql'
+      variables(virtual_ip: current_ip)
     end
 
     unless ::File.exist? '/var/lib/pgsql/data/postgresql.conf'
@@ -49,13 +61,7 @@ action :add do
 
       ruby_block 'sync_if_not_master' do
         block do
-          serf_output = `serf members`
-          master_node = serf_output.lines.find do |line|
-            line.include?('alive') && line.include?('postgresql_role=master')
-          end
-          master_name = master_node.split[0]
-          Chef::Log.info("Syncing from master at #{master_name}...")
-          system("rb_sync_from_master.sh #{master_name}")
+          sync_from_master
         end
         action :run
       end
@@ -102,7 +108,9 @@ action :add do
       end
       action :run
     end
-    node.normal['postgresql']['registered'] = false
+
+    node.normal['postgresql']['registered'] = false if virtual_ip_changed?(current_ip)
+
     Chef::Log.info('PostgreSQL cookbook has been processed')
   rescue => e
     Chef::Log.error(e.message)
@@ -132,6 +140,14 @@ action :register do
   begin
     ipaddress = new_resource.ipaddress
 
+    begin
+      postgresql_vip = data_bag_item('rBglobal', 'ipvirtual-internal-postgresql')
+    rescue
+      postgresql_vip = {}
+    end
+
+    current_ip = postgresql_vip['ip'] || ''
+
     unless node['postgresql']['registered']
       query = {}
       query['ID'] = "postgresql-#{node['hostname']}"
@@ -139,7 +155,7 @@ action :register do
       query['Address'] = ipaddress
       query['Port'] = 5432
       query['Meta'] = {}
-      query['Meta']['ipvirtual-internal-postgresql'] = postgresql_vip['ip'] || ''
+      query['Meta']['ipvirtual-internal-postgresql'] = current_ip
       json_query = Chef::JSONCompat.to_json(query)
 
       execute 'Register service in consul' do
