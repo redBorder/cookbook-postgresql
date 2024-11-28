@@ -14,22 +14,6 @@ module Postgresql
       routes
     end
 
-    def sync_from_master
-      serf_output = `serf members`
-      master_node = serf_output.lines.find do |line|
-        line.include?('alive') && line.include?('postgresql_role=master')
-      end
-
-      master_name = master_node.split[0]
-      master_ip = master_node.split[1].split(':')[0]
-      local_ips = `hostname -I`.split
-
-      return if local_ips.include?(master_ip)
-
-      Chef::Log.info("Master node detected at: #{master_name}. Syncing from master...")
-      system("rb_sync_from_master.sh #{master_name}")
-    end
-
     def fetch_master_ip(postgresql_vip)
       if postgresql_vip['ip']
         postgresql_vip['ip']
