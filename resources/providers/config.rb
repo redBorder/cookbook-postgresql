@@ -15,8 +15,6 @@ action :add do
       postgresql_vip = {}
     end
 
-    current_ip = postgresql_vip['ip'] || ''
-
     dnf_package 'postgresql' do
       action :upgrade
       flush_cache [:before]
@@ -33,13 +31,15 @@ action :add do
       not_if 'getent passwd postgres'
     end
 
+    node.normal['postgresql']['registered'] = false if virtual_ip_changed?(postgresql_vip['ip'] || '')
+
     template virtual_ip_file do
       source 'pg_virtual_ip_registered.txt.erb'
       owner 'root'
       group 'root'
       mode '0644'
       cookbook 'postgresql'
-      variables(virtual_ip: current_ip)
+      variables(virtual_ip: postgresql_vip['ip'] || '')
     end
 
     unless ::File.exist? '/var/lib/pgsql/data/postgresql.conf'
@@ -123,8 +123,6 @@ action :add do
       action :run
     end
 
-    node.normal['postgresql']['registered'] = false if virtual_ip_changed?(current_ip)
-
     Chef::Log.info('PostgreSQL cookbook has been processed')
   rescue => e
     Chef::Log.error(e.message)
@@ -160,8 +158,6 @@ action :register do
       postgresql_vip = {}
     end
 
-    current_ip = postgresql_vip['ip'] || ''
-
     unless node['postgresql']['registered']
       query = {}
       query['ID'] = "postgresql-#{node['hostname']}"
@@ -169,7 +165,7 @@ action :register do
       query['Address'] = ipaddress
       query['Port'] = 5432
       query['Meta'] = {}
-      query['Meta']['ipvirtual-internal-postgresql'] = current_ip
+      query['Meta']['ipvirtual-internal-postgresql'] = postgresql_vip['ip'] || ''
       json_query = Chef::JSONCompat.to_json(query)
 
       execute 'Register service in consul' do
