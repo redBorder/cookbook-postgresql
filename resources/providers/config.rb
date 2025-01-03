@@ -31,7 +31,29 @@ action :add do
       not_if 'getent passwd postgres'
     end
 
+    ruby_block 'check_postgresql_master_status' do
+      block do
+        if pg_master?
+          system('serf tags -set postgresql_role=master')
+        else
+          system('serf tags -set postgresql_role=standby')
+        end
+      end
+      action :run
+    end
+
     node.normal['postgresql']['registered'] = false if virtual_ip_changed?(postgresql_vip['ip'] || '')
+
+    ruby_block 'update_postgresql_conf' do
+      block do
+        postgresql_conf_file = '/var/lib/pgsql/data/postgresql.conf'
+        if ::File.exist?(postgresql_conf_file) && postgresql_vip['ip'] == postgresql_conf_host(postgresql_conf_file)
+          update_postgresql_conf(postgresql_conf_file)
+          system('systemctl reload postgresql.service')
+        end
+      end
+      action :run
+    end
 
     template virtual_ip_file do
       source 'pg_virtual_ip_registered.txt.erb'
@@ -61,17 +83,15 @@ action :add do
 
       ruby_block 'sync_if_not_master' do
         block do
-          serf_output = `serf members`
-          master_node = serf_output.lines.find do |line|
-            line.include?('alive') && line.include?('postgresql_role=master')
-          end
-
-          if master_node
-            master_name = master_node.split[0]
-            master_ip = master_node.split[1].split(':')[0]
-            local_ips = `hostname -I`.split
-            unless local_ips.include?(master_ip)
-              system("rb_sync_from_master.sh #{master_name}")
+          unless postgresql_vip['ip']
+            master_node = find_master_ip_from_serf
+            if master_node
+              master_name = master_node.split[0]
+              master_ip = master_node.split[1].split(':')[0]
+              local_ips = `hostname -I`.split
+              unless local_ips.include?(master_ip)
+                system("rb_sync_from_master.sh #{master_name}")
+              end
             end
           end
         end
@@ -89,36 +109,20 @@ action :add do
       notifies :restart, 'service[postgresql]'
     end
 
+    ruby_block 'check_postgresql_hosts' do
+      block do
+        hosts_file = '/etc/hosts'
+        master_ip = fetch_master_ip(postgresql_vip)
+        update_hosts_file(hosts_file, master_ip) if master_ip
+      end
+      action :run
+    end
+
     service 'postgresql' do
       service_name 'postgresql'
       ignore_failure true
       supports status: true, reload: true, restart: true, enable: true
       action [:start, :enable]
-    end
-
-    ruby_block 'check_postgresql_master_status' do
-      block do
-        is_recovery = `sudo -u postgres psql -h 127.0.0.1 -t -c "SELECT pg_is_in_recovery();" 2>/dev/null | tr -d ' \t\n\r'`
-        if is_recovery == 'f'
-          system('serf tags -set postgresql_role=master')
-        else
-          system('serf tags -set postgresql_role=standby')
-        end
-      end
-      action :run
-    end
-
-    ruby_block 'check_postgresql_hosts' do
-      block do
-        hosts_file = '/etc/hosts'
-        master_ip = fetch_master_ip(postgresql_vip)
-        if master_ip
-          update_hosts_file(hosts_file, master_ip)
-        else
-          Chef::Log.warn('No master IP found for PostgreSQL.')
-        end
-      end
-      action :run
     end
 
     Chef::Log.info('PostgreSQL cookbook has been processed')
