@@ -58,28 +58,5 @@ module Postgresql
     def virtual_ip_changed?(current_ip)
       last_registered_virtual_ip != current_ip
     end
-
-    # Updates the PostgreSQL configuration file with the master node's IP.
-    def update_postgresql_conf(postgresql_conf_file)
-      master_ip = find_master_ip_from_serf
-      conf_lines = ::File.readlines(postgresql_conf_file)
-
-      updated_lines = conf_lines.map do |line|
-        line.strip.start_with?('primary_conninfo') ? line.sub(/host=[^ ]+/, "host=#{master_ip}") : line
-      end
-
-      ::File.write(postgresql_conf_file, updated_lines.join)
-    end
-
-    # Returns the host from the primary_conninfo line in the PostgreSQL configuration file.
-    def postgresql_conf_host(postgresql_conf_file)
-      conf_lines = ::File.readlines(postgresql_conf_file)
-      primary_conninfo = conf_lines.find { |line| line.strip.start_with?('primary_conninfo') }
-
-      return unless primary_conninfo
-
-      host_part = primary_conninfo.split(' ').find { |part| part.start_with?('\'host=') }
-      host_part.split('=')[1]
-    end
   end
 end

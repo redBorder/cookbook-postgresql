@@ -44,17 +44,6 @@ action :add do
 
     node.normal['postgresql']['registered'] = false if virtual_ip_changed?(postgresql_vip['ip'] || '')
 
-    ruby_block 'update_postgresql_conf' do
-      block do
-        postgresql_conf_file = '/var/lib/pgsql/data/postgresql.conf'
-        if ::File.exist?(postgresql_conf_file) && postgresql_vip['ip'] == postgresql_conf_host(postgresql_conf_file)
-          update_postgresql_conf(postgresql_conf_file)
-          system('systemctl reload postgresql.service')
-        end
-      end
-      action :run
-    end
-
     template virtual_ip_file do
       source 'pg_virtual_ip_registered.txt.erb'
       owner 'root'
