@@ -83,15 +83,13 @@ action :add do
 
       ruby_block 'sync_if_not_master' do
         block do
-          unless postgresql_vip['ip']
-            master_node = find_master_ip_from_serf
-            if master_node
-              master_name = master_node.split[0]
-              master_ip = master_node.split[1].split(':')[0]
-              local_ips = `hostname -I`.split
-              unless local_ips.include?(master_ip)
-                system("rb_sync_from_master.sh #{master_name}")
-              end
+          master_node = find_master_ip_from_serf
+          if master_node
+            master_name = master_node.split[0]
+            master_ip = master_node.split[1].split(':')[0]
+            local_ips = `hostname -I`.split
+            unless local_ips.include?(master_ip)
+              system("rb_sync_from_master.sh #{master_name}")
             end
           end
         end
