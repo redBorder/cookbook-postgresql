@@ -7,7 +7,6 @@ action :add do
   begin
     user = new_resource.user
     virtual_ip_file = new_resource.virtual_ip_file
-    postgresql_conf_file = new_resource.postgresql_conf_file
     routes = local_routes
 
     begin
@@ -47,6 +46,7 @@ action :add do
 
     ruby_block 'update_postgresql_conf' do
       block do
+        postgresql_conf_file = '/var/lib/pgsql/data/postgresql.conf'
         if ::File.exist?(postgresql_conf_file) && postgresql_vip['ip'] == postgresql_conf_host(postgresql_conf_file)
           update_postgresql_conf(postgresql_conf_file)
           system('systemctl reload postgresql.service')
@@ -64,7 +64,7 @@ action :add do
       variables(virtual_ip: postgresql_vip['ip'] || '')
     end
 
-    unless ::File.exist? postgresql_conf_file
+    unless ::File.exist? '/var/lib/pgsql/data/postgresql.conf'
       Chef::Log.info('Initializing postgresql service')
       execute 'postgresql_initdb' do
         user user
@@ -72,7 +72,7 @@ action :add do
         action :run
       end
 
-      template postgresql_conf_file do
+      template '/var/lib/pgsql/data/postgresql.conf' do
         source 'postgresql.conf.erb'
         owner user
         group user
