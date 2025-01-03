@@ -9,3 +9,4 @@ attribute :postgresql_port, kind_of: Integer, default: 5432
 attribute :cdomain, kind_of: String, default: 'redborder.cluster'
 attribute :ipaddress, kind_of: String, default: '127.0.0.1'
 attribute :virtual_ip_file, kind_of: String, default: '/etc/redborder/pg_virtual_ip_registered.txt'
+attribute :postgresql_conf_file, kind_of: String, default: '/var/lib/pgsql/data/postgresql.conf'
