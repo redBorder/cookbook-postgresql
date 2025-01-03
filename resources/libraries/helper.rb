@@ -76,7 +76,7 @@ module Postgresql
       conf_lines = ::File.readlines(postgresql_conf_file)
       primary_conninfo = conf_lines.find { |line| line.strip.start_with?('primary_conninfo') }
 
-      return nil unless primary_conninfo
+      return unless primary_conninfo
 
       host_part = primary_conninfo.split(' ').find { |part| part.start_with?('\'host=') }
       host_part.split('=')[1]
