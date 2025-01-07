@@ -60,7 +60,8 @@ module Postgresql
     end
 
     # Updates the PostgreSQL configuration file with the master node's IP.
-    def update_postgresql_conf(postgresql_conf_file, master_ip)
+    def update_postgresql_conf(postgresql_conf_file)
+      master_ip = find_master_ip_from_serf
       conf_lines = ::File.readlines(postgresql_conf_file)
 
       updated_lines = conf_lines.map do |line|

@@ -90,7 +90,7 @@ action :add do
         master_ip = fetch_master_ip(postgresql_vip)
         update_hosts_file(hosts_file, master_ip) if master_ip
         if ::File.exist?(postgresql_conf_file) && postgresql_vip['ip'] == postgresql_conf_host(postgresql_conf_file)
-          update_postgresql_conf(postgresql_conf_file, master_ip)
+          update_postgresql_conf(postgresql_conf_file)
           system('systemctl reload postgresql.service')
         end
       end
