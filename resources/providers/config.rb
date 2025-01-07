@@ -31,17 +31,6 @@ action :add do
       not_if 'getent passwd postgres'
     end
 
-    ruby_block 'check_postgresql_master_status' do
-      block do
-        if pg_master?
-          system('serf tags -set postgresql_role=master')
-        else
-          system('serf tags -set postgresql_role=standby')
-        end
-      end
-      action :run
-    end
-
     node.normal['postgresql']['registered'] = false if virtual_ip_changed?(postgresql_vip['ip'] || '')
 
     template virtual_ip_file do
@@ -110,6 +99,17 @@ action :add do
       ignore_failure true
       supports status: true, reload: true, restart: true, enable: true
       action [:start, :enable]
+    end
+
+    ruby_block 'check_postgresql_master_status' do
+      block do
+        if pg_master?
+          system('serf tags -set postgresql_role=master')
+        else
+          system('serf tags -set postgresql_role=standby')
+        end
+      end
+      action :run
     end
 
     Chef::Log.info('PostgreSQL cookbook has been processed')
