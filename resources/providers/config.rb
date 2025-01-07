@@ -61,13 +61,11 @@ action :add do
 
       ruby_block 'sync_if_not_master' do
         block do
-          master_node = find_master_ip_from_serf
-          if master_node
-            master_name = master_node.split[0]
-            master_ip = master_node.split[1].split(':')[0]
+          master_ip = find_master_ip_from_serf
+          if master_ip
             local_ips = `hostname -I`.split
             unless local_ips.include?(master_ip)
-              system("rb_sync_from_master.sh #{master_name}")
+              system("rb_sync_from_master.sh #{master_ip}")
             end
           end
         end
@@ -88,8 +86,13 @@ action :add do
     ruby_block 'check_postgresql_hosts' do
       block do
         hosts_file = '/etc/hosts'
+        postgresql_conf_file = '/var/lib/pgsql/data/postgresql.conf'
         master_ip = fetch_master_ip(postgresql_vip)
         update_hosts_file(hosts_file, master_ip) if master_ip
+        if ::File.exist?(postgresql_conf_file) && postgresql_vip['ip'] == postgresql_conf_host(postgresql_conf_file)
+          update_postgresql_conf(postgresql_conf_file, master_ip)
+          system('systemctl reload postgresql.service')
+        end
       end
       action :run
     end
