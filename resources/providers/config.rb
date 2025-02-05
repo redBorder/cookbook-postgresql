@@ -31,17 +31,6 @@ action :add do
       not_if 'getent passwd postgres'
     end
 
-    node.normal['postgresql']['registered'] = false if virtual_ip_changed?(postgresql_vip['ip'] || '')
-
-    template virtual_ip_file do
-      source 'pg_virtual_ip_registered.txt.erb'
-      owner 'root'
-      group 'root'
-      mode '0644'
-      cookbook 'postgresql'
-      variables(virtual_ip: postgresql_vip['ip'] || '')
-    end
-
     unless ::File.exist? '/var/lib/pgsql/data/postgresql.conf'
       Chef::Log.info('Initializing postgresql service')
       execute 'postgresql_initdb' do
@@ -83,36 +72,11 @@ action :add do
       notifies :restart, 'service[postgresql]'
     end
 
-    ruby_block 'check_postgresql_hosts' do
-      block do
-        hosts_file = '/etc/hosts'
-        postgresql_conf_file = '/var/lib/pgsql/data/postgresql.conf'
-        master_ip = fetch_master_ip(postgresql_vip)
-        update_hosts_file(hosts_file, master_ip) if master_ip
-        if ::File.exist?(postgresql_conf_file) && postgresql_vip['ip'] == postgresql_conf_host(postgresql_conf_file)
-          update_postgresql_conf(postgresql_conf_file)
-          system('systemctl reload postgresql.service')
-        end
-      end
-      action :run
-    end
-
     service 'postgresql' do
       service_name 'postgresql'
       ignore_failure true
       supports status: true, reload: true, restart: true, enable: true
       action [:start, :enable]
-    end
-
-    ruby_block 'check_postgresql_master_status' do
-      block do
-        if pg_master?
-          system('serf tags -set postgresql_role=master')
-        else
-          system('serf tags -set postgresql_role=standby')
-        end
-      end
-      action :run
     end
 
     Chef::Log.info('PostgreSQL cookbook has been processed')
@@ -144,20 +108,12 @@ action :register do
   begin
     ipaddress = new_resource.ipaddress
 
-    begin
-      postgresql_vip = data_bag_item('rBglobal', 'ipvirtual-internal-postgresql')
-    rescue
-      postgresql_vip = {}
-    end
-
     unless node['postgresql']['registered']
       query = {}
       query['ID'] = "postgresql-#{node['hostname']}"
       query['Name'] = 'postgresql'
       query['Address'] = ipaddress
       query['Port'] = 5432
-      query['Meta'] = {}
-      query['Meta']['ipvirtual-internal-postgresql'] = postgresql_vip['ip'] || ''
       json_query = Chef::JSONCompat.to_json(query)
 
       execute 'Register service in consul' do
