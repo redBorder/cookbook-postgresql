@@ -22,31 +22,5 @@ module Postgresql
       end
       master_ip ? master_ip.split[1].split(':')[0] : nil
     end
-
-    # Updates the hosts file with the master PostgreSQL node's IP.
-    def update_hosts_file(hosts_file, master_ip)
-      return if ::File.readlines(hosts_file).grep(/#{master_ip}\s+master\.postgresql\.service/).any?
-
-      hosts_content = ::File.read(hosts_file).lines.reject { |line| line.include?('postgresql') }
-      hosts_content << "#{master_ip} master.postgresql.service\n"
-      ::File.open(hosts_file, 'w') { |file| file.puts hosts_content }
-    end
-
-    # Returns the file path where the last registered virtual IP is stored.
-    def virtual_ip_file
-      '/etc/redborder/pg_virtual_ip_registered.txt'
-    end
-
-    # Reads the last registered virtual IP from the file.
-    def last_registered_virtual_ip
-      return unless ::File.exist?(virtual_ip_file)
-
-      ::File.read(virtual_ip_file).strip
-    end
-
-    # Checks if the current virtual IP has changed from the last registered virtual IP.
-    def virtual_ip_changed?(current_ip)
-      last_registered_virtual_ip != current_ip
-    end
   end
 end

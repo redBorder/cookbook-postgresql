@@ -6,14 +6,7 @@ include Postgresql::Helper
 action :add do
   begin
     user = new_resource.user
-    virtual_ip_file = new_resource.virtual_ip_file
     routes = local_routes
-
-    begin
-      postgresql_vip = data_bag_item('rBglobal', 'ipvirtual-internal-postgresql')
-    rescue
-      postgresql_vip = {}
-    end
 
     dnf_package 'postgresql' do
       action :upgrade
