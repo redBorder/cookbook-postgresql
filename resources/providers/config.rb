@@ -91,6 +91,12 @@ action :remove do
       action :remove
     end
 
+    directory '/var/lib/pgsql' do
+      recursive true
+      action :delete
+      ignore_failure true
+    end
+
     Chef::Log.info('PostgreSQL cookbook has been processed')
   rescue => e
     Chef::Log.error(e.message)
