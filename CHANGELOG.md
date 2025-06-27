@@ -1,6 +1,11 @@
 cookbook-postgresql CHANGELOG
 ===============
 
+## 0.1.10
+
+  - nilsver
+    - [321d0f0] remove flush cache
+
 ## 0.1.9
 
   - Miguel Negrón
