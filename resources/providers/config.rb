@@ -10,17 +10,14 @@ action :add do
 
     dnf_package 'postgresql' do
       action :upgrade
-      flush_cache [:before]
     end
 
     dnf_package 'postgresql-server' do
       action :upgrade
-      flush_cache [:before]
     end
 
     dnf_package 'redborder-postgresql' do
       action :upgrade
-      flush_cache [:before]
     end
 
     execute 'create_user' do
