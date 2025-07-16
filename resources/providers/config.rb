@@ -6,6 +6,7 @@ include Postgresql::Helper
 action :add do
   begin
     user = new_resource.user
+    postgresql_hosts = new_resource.postgresql_hosts
     routes = local_routes
 
     dnf_package 'postgresql' do
@@ -41,7 +42,7 @@ action :add do
 
       ruby_block 'sync_if_not_master' do
         block do
-          master_ip = find_master_ip_from_serf
+          master_ip = find_master_ip_from_serf(postgresql_hosts)
           if master_ip
             local_ips = `hostname -I`.split
             unless local_ips.include?(master_ip)

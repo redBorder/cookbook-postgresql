@@ -15,12 +15,21 @@ module Postgresql
     end
 
     # Queries Serf members to find the master node's IP.
-    def find_master_ip_from_serf
+    def find_master_ip_from_serf(postgresql_hosts)
+      postgresql_master_node = postgresql_hosts.first
       serf_output = `serf members`
+
       master_ip = serf_output.lines.find do |line|
-        line.include?('alive') && line.include?('postgresql=ready')
+        next unless line.include?('alive')
+
+        node_name = line.split[0]
+        node_name == postgresql_master_node
       end
-      master_ip ? master_ip.split[1].split(':')[0] : nil
+
+      return unless master_ip
+
+      ip_part = master_ip.split[1]
+      ip_part&.split(':')&.first
     end
   end
 end
