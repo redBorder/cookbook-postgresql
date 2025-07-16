@@ -21,6 +21,8 @@ mkdir -p %{buildroot}/var/chef/cookbooks/postgresql
 cp -f -r  resources/* %{buildroot}/var/chef/cookbooks/postgresql
 chmod -R 0755 %{buildroot}/var/chef/cookbooks/postgresql
 install -D -m 0644 README.md %{buildroot}/var/chef/cookbooks/postgresql/README.md
+mkdir -p %{buildroot}/usr/lib/redborder/scripts
+cp resources/scripts/* %{buildroot}/usr/lib/redborder/scripts
 
 %pre
 if [ -d /var/chef/cookbooks/postgresql ]; then
