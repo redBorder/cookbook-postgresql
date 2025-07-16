@@ -50,11 +50,15 @@ fi
 /var/chef/cookbooks/postgresql
 %defattr(0644,root,root)
 /var/chef/cookbooks/postgresql/README.md
-
+%defattr(0755,root,root)
+/usr/lib/redborder/scripts/rb_ingest_vuln_cve_pg.rb
 
 %doc
 
 %changelog
+* Wed Jul 16 2025 Nils Verschaeve <nverschaeve@redborder.com>
+- Replace mongodb with postgresql
+
 * Thu Oct 10 2024 Miguel Negrón <manegron@redborder.com>
 - Add pre and postun
 
