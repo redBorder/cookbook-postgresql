@@ -28,11 +28,11 @@ class CVEDatabase
     raise 'Missing production or development section in database.yml' unless env
 
     {
-      dbname: redborder['database'],
-      user: redborder['username'] || 'postgres',
-      password: redborder['password'],
-      host: redborder['host'] || 'localhost',
-      port: redborder['port'] || 5432
+      dbname: env['database'],
+      user: env['username'] || 'postgres',
+      password: env['password'],
+      host: env['host'] || 'localhost',
+      port: env['port'] || 5432
     }
   end
 
