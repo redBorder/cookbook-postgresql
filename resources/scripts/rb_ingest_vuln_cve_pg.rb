@@ -46,28 +46,55 @@ class CVEDatabase
 
   def import_cve_files
     complete_download = true
-
     @cve_url_files.each do |url|
-      puts "Downloading NVD (MITRE) JSON CVEs file #{url.to_s}"
+      puts "Downloading NVD (MITRE) JSON CVEs file #{url}"
       filename = File.basename(url)
-      puts filename
-      puts "curl -k -o #{filename} #{url}"
-      system("curl -k -o #{filename} #{url} 2>&1")
 
-      # If file was not downlaoded then we should not do anything
-      complete_download = false unless File.exist?(filename)
-      break unless complete_download
+      unless download_gz_file_with_retries(url, filename)
+        puts "ERROR: Could not download #{filename} after multiple attempts."
+        complete_download = false
+        break
+      end
 
       system("gunzip -f #{filename}")
-      file_json = filename.split('.gz').first
-      system("dos2unix #{file_json}")
-      @cve_files.push(file_json)
+      file_json = filename.sub(/\.gz$/, '')
+
+      if File.exist?(file_json)
+        system("dos2unix #{file_json}")
+        @cve_files.push(file_json)
+      else
+        puts "ERROR: JSON file #{file_json} missing after unzip."
+        complete_download = false
+        break
+      end
     end
 
-    puts ''
     import_to_postgresql if complete_download
     remove_files
     complete_download
+  end
+
+  def download_gz_file_with_retries(url, destination, max_attempts = 3)
+    max_attempts.times do |attempt|
+      puts "Attempt ##{attempt + 1} to download #{destination}"
+      system("curl -k -o #{destination} #{url}")
+      curl_status = $?.exitstatus
+
+      if curl_status == 0 && File.exist?(destination)
+        file_type = `file #{destination}`
+        if file_type.include?("gzip compressed data")
+          return true
+        else
+          puts "Downloaded file is not valid gzip (type: #{file_type.strip})"
+        end
+      else
+        puts "curl failed with exit code #{curl_status}"
+      end
+
+      sleep 2
+    end
+
+    false
   end
 
   def ensure_table
