@@ -32,7 +32,7 @@ class CVEDatabase
       user: env['username'] || 'postgres',
       password: env['password'],
       host: env['host'] || 'localhost',
-      port: env['port'] || 5432,
+      port: env['port'] || 5432
     }
   end
 
@@ -45,30 +45,35 @@ class CVEDatabase
   end
 
   def import_cve_files
-    complete = true
+    complete_download = true
 
     @cve_url_files.each do |url|
-      file = File.join(@download_path, File.basename(url))
-      puts "Downloading #{url}"
-      system("curl -k -o #{file} #{url}")
-      unless File.exist?(file)
-        complete = false
-        break
-      end
-      unzipped = file.sub('.gz', '')
-      system("gunzip -f #{file}")
-      @cve_files << unzipped
+      puts "Downloading NVD (MITRE) JSON CVEs file #{url.to_s}"
+      filename = File.basename(url)
+      puts filename
+      puts "curl -k -o #{filename} #{url}"
+      system("curl -k -o #{filename} #{url} 2>&1")
+
+      # If file was not downlaoded then we should not do anything
+      complete_download = false unless File.exist?(filename)
+      break unless complete_download
+
+      system("gunzip -f #{filename}")
+      file_json = filename.split('.gz').first
+      system("dos2unix #{file_json}")
+      @cve_files.push(file_json)
     end
 
-    if complete
-      import_to_postgresql
-    end
-
+    puts ''
+    import_to_postgresql if complete_download
     remove_files
-    complete
+    complete_download
   end
 
   def ensure_table
+    #surpresses the notice message in logs
+    @pg_conn.exec("SET client_min_messages TO WARNING;")
+
     @pg_conn.exec <<~SQL
       CREATE TABLE IF NOT EXISTS cves (
         id SERIAL PRIMARY KEY,
@@ -109,8 +114,18 @@ class CVEDatabase
   end
 
   def remove_files
-    puts 'Cleaning up downloaded files...'
-    @cve_files.each { |f| File.delete(f) if File.exist?(f) }
+    puts "Cleaning up downloaded files..."
+
+    # Remove unzipped JSON files
+    @cve_files.each do |f|
+      File.delete(f) if File.exist?(f)
+    end
+
+    # Remove .gz files
+    @cve_url_files.each do |url|
+      gz_file = File.join(@download_path, File.basename(url))
+      File.delete(gz_file) if File.exist?(gz_file)
+    end
   end
 end
 
@@ -119,9 +134,7 @@ def create_update_log
 end
 
 def delete_update_log
-  File.delete('/tmp/rb_vulnerability_load_cvedb_last_update')
-rescue Errno::ENOENT
-  nil
+  File.delete('/tmp/rb_vulnerability_load_cvedb_last_update') rescue nil
 end
 
 puts 'Cleaning last update log...'
@@ -131,10 +144,10 @@ begin
   start_time = Time.now
   cve_db = CVEDatabase.new
   if cve_db.import_cve_files
-    puts 'CVEs imported successfully.'
+    puts "CVEs imported successfully."
     create_update_log
   else
-    puts 'ERROR: Some CVE files failed to download.'
+    puts "ERROR: Some CVE files failed to download."
     exit 1
   end
   puts "Completed in #{Time.now - start_time} seconds."
@@ -142,3 +155,4 @@ rescue => e
   puts "ERROR: #{e.message}"
   exit 1
 end
+
