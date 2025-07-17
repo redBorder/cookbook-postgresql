@@ -32,7 +32,7 @@ class CVEDatabase
       user: env['username'] || 'postgres',
       password: env['password'],
       host: env['host'] || 'localhost',
-      port: env['port'] || 5432
+      port: env['port'] || 5432,
     }
   end
 
@@ -71,8 +71,8 @@ class CVEDatabase
   end
 
   def ensure_table
-    #surpresses the notice message in logs
-    @pg_conn.exec("SET client_min_messages TO WARNING;")
+    # Surpresses the notice message in logs
+    @pg_conn.exec('SET client_min_messages TO WARNING;')
 
     @pg_conn.exec <<~SQL
       CREATE TABLE IF NOT EXISTS cves (
@@ -114,7 +114,7 @@ class CVEDatabase
   end
 
   def remove_files
-    puts "Cleaning up downloaded files..."
+    puts 'Cleaning up downloaded files...'
 
     # Remove unzipped JSON files
     @cve_files.each do |f|
@@ -134,7 +134,11 @@ def create_update_log
 end
 
 def delete_update_log
-  File.delete('/tmp/rb_vulnerability_load_cvedb_last_update') rescue nil
+  begin
+    File.delete('/tmp/rb_vulnerability_load_cvedb_last_update')
+  rescue Errno::ENOENT
+    nil
+  end
 end
 
 puts 'Cleaning last update log...'
@@ -144,10 +148,10 @@ begin
   start_time = Time.now
   cve_db = CVEDatabase.new
   if cve_db.import_cve_files
-    puts "CVEs imported successfully."
+    puts 'CVEs imported successfully.'
     create_update_log
   else
-    puts "ERROR: Some CVE files failed to download."
+    puts 'ERROR: Some CVE files failed to download.'
     exit 1
   end
   puts "Completed in #{Time.now - start_time} seconds."
