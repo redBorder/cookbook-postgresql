@@ -5,6 +5,7 @@ require 'json'
 require 'zlib'
 require 'pg'
 require 'yaml'
+require 'English'
 
 class CVEDatabase
   attr_accessor :cve_files
@@ -78,11 +79,11 @@ class CVEDatabase
     max_attempts.times do |attempt|
       puts "Attempt ##{attempt + 1} to download #{destination}"
       system("curl -k -o #{destination} #{url}")
-      curl_status = $?.exitstatus
+      curl_status = $CHILD_STATUS.exitstatus
 
       if curl_status == 0 && File.exist?(destination)
         file_type = `file #{destination}`
-        if file_type.include?("gzip compressed data")
+        if file_type.include?('gzip compressed data')
           return true
         else
           puts "Downloaded file is not valid gzip (type: #{file_type.strip})"
