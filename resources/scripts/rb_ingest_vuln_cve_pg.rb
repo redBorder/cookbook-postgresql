@@ -21,16 +21,15 @@ class CVEDatabase
   end
 
   def self.redborder_pg_conn
-
-    raw = %x(knife data bag show passwords db_redborder -F json)
-    clean = raw.lines.reject { |line| line.start_with?("INFO:") }.join
+    raw = `knife data bag show passwords db_redborder -F json`
+    clean = raw.lines.reject { |line| line.start_with?('INFO:') }.join
     databag = JSON.parse(clean)
     {
       dbname: databag['database'],
       user: databag['username'],
       password: databag['pass'],
       host: databag['hostname'],
-      port: databag['port']
+      port: databag['port'],
     }
   end
 
