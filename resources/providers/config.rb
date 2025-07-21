@@ -6,17 +6,14 @@ include Postgresql::Helper
 action :add do
   begin
     user = new_resource.user
-    routes = local_routes()
+    postgresql_hosts = new_resource.postgresql_hosts
+    routes = local_routes
 
     dnf_package 'postgresql' do
       action :upgrade
     end
 
     dnf_package 'postgresql-server' do
-      action :upgrade
-    end
-
-    dnf_package 'redborder-postgresql' do
       action :upgrade
     end
 
@@ -42,6 +39,19 @@ action :add do
         cookbook 'postgresql'
         notifies :restart, 'service[postgresql]'
       end
+
+      ruby_block 'sync_if_not_master' do
+        block do
+          master_ip = find_master_ip_from_serf(postgresql_hosts)
+          if master_ip
+            local_ips = `hostname -I`.split
+            unless local_ips.include?(master_ip)
+              system("rb_sync_from_master.sh #{master_ip}")
+            end
+          end
+        end
+        action :run
+      end
     end
 
     template '/var/lib/pgsql/data/pg_hba.conf' do
@@ -56,13 +66,6 @@ action :add do
 
     service 'postgresql' do
       service_name 'postgresql'
-      ignore_failure true
-      supports status: true, reload: true, restart: true, enable: true
-      action [:start, :enable]
-    end
-
-    service 'redborder-postgresql' do
-      service_name 'redborder-postgresql'
       ignore_failure true
       supports status: true, reload: true, restart: true, enable: true
       action [:start, :enable]
@@ -87,6 +90,12 @@ action :remove do
       action :remove
     end
 
+    directory '/var/lib/pgsql' do
+      recursive true
+      action :delete
+      ignore_failure true
+    end
+
     Chef::Log.info('PostgreSQL cookbook has been processed')
   rescue => e
     Chef::Log.error(e.message)
@@ -96,13 +105,6 @@ end
 action :register do
   begin
     ipaddress = new_resource.ipaddress
-
-    service 'redborder-postgresql' do
-      service_name 'redborder-postgresql'
-      ignore_failure true
-      supports status: true, enable: true
-      action :nothing
-    end
 
     unless node['postgresql']['registered']
       query = {}
@@ -115,7 +117,6 @@ action :register do
       execute 'Register service in consul' do
         command "curl -X PUT http://localhost:8500/v1/agent/service/register -d '#{json_query}' &>/dev/null"
         action :nothing
-        notifies :restart, 'service[redborder-postgresql]'
       end.run_action(:run)
 
       node.normal['postgresql']['registered'] = true
