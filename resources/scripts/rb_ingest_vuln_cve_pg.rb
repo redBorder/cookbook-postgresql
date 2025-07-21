@@ -16,24 +16,21 @@ class CVEDatabase
     @cve_files = []
 
     set_cve_files
-    @pg_conn = PG.connect(self.class.redborder_pg_conn_info)
+    @pg_conn = PG.connect(self.class.redborder_pg_conn)
     ensure_table
   end
 
-  def self.redborder_pg_conn_info
-    config_path = '/var/www/rb-rails/config/database.yml'
-    raise "Missing #{config_path}" unless File.exist?(config_path)
+  def self.redborder_pg_conn
 
-    config = YAML.load_file(config_path)
-    env = config['production'] || config['development']
-    raise 'Missing production or development section in database.yml' unless env
-
+    raw = %x(knife data bag show passwords db_redborder -F json)
+    clean = raw.lines.reject { |line| line.start_with?("INFO:") }.join
+    databag = JSON.parse(clean)
     {
-      dbname: env['database'],
-      user: env['username'] || 'postgres',
-      password: env['password'],
-      host: env['host'] || 'localhost',
-      port: env['port'] || 5432,
+      dbname: databag['database'],
+      user: databag['username'],
+      password: databag['pass'],
+      host: databag['hostname'],
+      port: databag['port']
     }
   end
 
