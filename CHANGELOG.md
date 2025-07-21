@@ -6,22 +6,15 @@ cookbook-postgresql CHANGELOG
   - Rafael Gomez
     - [6b4e634] Add recursive deletion of PostgreSQL data directory in remove action
     - [a3d8748] Add methods to update PostgreSQL configuration with master node IP
-    - [fc699e8] Reintroduce master status check logic in PostgreSQL configuration provider
-    - [814c307] Remove PostgreSQL configuration update methods and related logic from helper and config provider
-    - [56490f6] Remove postgresql_conf_file attribute and hardcode configuration file path in add action
-    - [97e07db] Add postgresql_conf_file attribute and update configuration file handling
-    - [d70f144] sync_if_not_master will do it postgresql cookbook
+    - [814c307] Move PostgreSQL configuration update methods and related logic from helper and config provider
     - [f2ff35b] Execute sync_if_not_master always
     - [0fcea34] Registering postgresql service in consul each run
-    - [6a37fbe] Creating serf tags and refactor code to use helper methods
+    - [6a37fbe] Creating serf tags
     - [b76ac0f] Passign master name to rb_sync_from_master.sh instead of master ip
     - [e297802] Creating meta tag ipvirtual-internal-postgresql
-    - [d56e778] Refactor sync_if_not_master ruby_block to be only one
-    - [485f412] Removing action restart of redborder-postgresql service in consul registration
+    - [485f412] Removing redborder-postgresql in consul
     - [7de0b58] removing master.postgresql.service from /etc/hosts if there is no virtual ip registered
     - [d5f0d73] Disable and stop redborder-postgresql if postgres virtual ip is registered
-    - [714ad65] Creating postgresql_role serf tag
-    - [d240f8b] Do not execute sync_if_not_master if there is a vrp registered
 
 ## 0.1.10
 
