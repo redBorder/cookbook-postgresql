@@ -1,6 +1,21 @@
 cookbook-postgresql CHANGELOG
 ===============
 
+## 0.2.0
+
+  - Rafael Gomez
+    - [6b4e634] Add recursive deletion of PostgreSQL data directory in remove action
+    - [a3d8748] Add methods to update PostgreSQL configuration with master node IP
+    - [814c307] Move PostgreSQL configuration update methods and related logic from helper and config provider
+    - [f2ff35b] Execute sync_if_not_master always
+    - [0fcea34] Registering postgresql service in consul each run
+    - [6a37fbe] Creating serf tags
+    - [b76ac0f] Passign master name to rb_sync_from_master.sh instead of master ip
+    - [e297802] Creating meta tag ipvirtual-internal-postgresql
+    - [485f412] Removing redborder-postgresql in consul
+    - [7de0b58] removing master.postgresql.service from /etc/hosts if there is no virtual ip registered
+    - [d5f0d73] Disable and stop redborder-postgresql if postgres virtual ip is registered
+
 ## 0.1.10
 
   - nilsver
