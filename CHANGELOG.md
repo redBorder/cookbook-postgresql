@@ -3,22 +3,8 @@ cookbook-postgresql CHANGELOG
 
 ## 0.2.1
 
-  - ljblancoredborder
-    - [3698468] bump version
-    - [8c91b7a] Merge pull request #18 from redBorder/feature/22218_replace_mongodb
-    - [b31cbae] Merge remote-tracking branch 'origin/master' into feature/22218_replace_mongodb
-  - Luis Blanco
-    - [8c91b7a] Merge pull request #18 from redBorder/feature/22218_replace_mongodb
   - nilsver
-    - [48bfc6d] fix lint
-    - [338d9d3] fix pg connection
-    - [913d245] fix lint again
     - [930e278] added retry to handle curl6/7 error
-    - [9ae6491] fix lint again
-    - [20ea7c5] fix lint
-    - [a565cd7] optimise script
-    - [b0a7225] fix lint
-    - [afa5cc7] db connection fix
     - [89e5f6b] install script
     - [bbfcc77] add script to ingest cve into postgres
 
