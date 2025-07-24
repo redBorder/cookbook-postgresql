@@ -1,6 +1,13 @@
 cookbook-postgresql CHANGELOG
 ===============
 
+## 0.3.0
+
+  - nilsver
+    - [338d9d3] fix pg connection
+    - [930e278] added retry to handle curl6/7 error
+    - [bbfcc77] add script to ingest cve into postgres
+
 ## 0.2.0
 
   - Rafael Gomez
