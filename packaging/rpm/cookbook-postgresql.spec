@@ -21,6 +21,8 @@ mkdir -p %{buildroot}/var/chef/cookbooks/postgresql
 cp -f -r  resources/* %{buildroot}/var/chef/cookbooks/postgresql
 chmod -R 0755 %{buildroot}/var/chef/cookbooks/postgresql
 install -D -m 0644 README.md %{buildroot}/var/chef/cookbooks/postgresql/README.md
+mkdir -p %{buildroot}/usr/lib/redborder/scripts
+cp resources/scripts/* %{buildroot}/usr/lib/redborder/scripts
 
 %pre
 if [ -d /var/chef/cookbooks/postgresql ]; then
@@ -50,11 +52,15 @@ fi
 /var/chef/cookbooks/postgresql
 %defattr(0644,root,root)
 /var/chef/cookbooks/postgresql/README.md
-
+%defattr(0755,root,root)
+/usr/lib/redborder/scripts/rb_ingest_vuln_cve_pg.rb
 
 %doc
 
 %changelog
+* Wed Jul 16 2025 Nils Verschaeve <nverschaeve@redborder.com>
+- Replace mongodb with postgresql
+
 * Thu Oct 10 2024 Miguel Negrón <manegron@redborder.com>
 - Add pre and postun
 
