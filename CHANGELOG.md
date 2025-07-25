@@ -1,6 +1,11 @@
 cookbook-postgresql CHANGELOG
 ===============
 
+## 0.3.1
+
+  - jnavarrorb
+    - [fec70ac] Remove executable permissions on non-executable files
+
 ## 0.3.0
 
   - nilsver
