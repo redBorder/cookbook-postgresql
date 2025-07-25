@@ -1,13 +1,6 @@
 cookbook-postgresql CHANGELOG
 ===============
 
-## 0.2.1
-
-  - nilsver
-    - [930e278] added retry to handle curl6/7 error
-    - [89e5f6b] install script
-    - [bbfcc77] add script to ingest cve into postgres
-
 ## 0.3.0
 
   - nilsver
