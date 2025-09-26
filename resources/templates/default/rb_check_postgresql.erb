@@ -9,10 +9,10 @@ PGUSER="rep"
 PGMASTERUSER="postgres"
 PGPORT=5432
 DATABASE="postgres"
+
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 ROLE=$(psql -h localhost -U "$PGUSER" -p "$PGPORT" -d "$DATABASE" -t -A \
     -c "SELECT CASE WHEN pg_is_in_recovery() THEN 'slave' ELSE 'master' END;" 2>/dev/null | tr -d '[:space:]')
-OUTPUT="{\"role\":\"$ROLE\",\"timestamp\":\"$TIMESTAMP\","
 
 if [ "$ROLE" == "master" ]; then
     # Master: Check if all replication walsender processes are active on the master node
@@ -35,7 +35,7 @@ if [ "$ROLE" == "master" ]; then
     STATUS="OK"
     [ "$OUT_OF_SYNC" -eq 1 ] && STATUS="OUT_OF_SYNC"
 
-    OUTPUT+="\"status\":\"$STATUS\",\"replicas\":$REPLICA_ARRAY}"
+    OUTPUT="{\"role\":\"$ROLE\",\"timestamp\":\"$TIMESTAMP\",\"status\":\"$STATUS\",\"replicas\":$REPLICA_ARRAY}"
 
     echo "$OUTPUT"
     [ "$STATUS" == "OUT_OF_SYNC" ] && exit 1 || exit 0
@@ -68,7 +68,7 @@ elif [ "$ROLE" == "slave" ]; then
     STATUS="OK"
     (( LAG_BYTES > THRESHOLD_BYTES || REPLICATION_DELAY > THRESHOLD_SECONDS )) && STATUS="OUT_OF_SYNC"
 
-    OUTPUT+="{\"status\":\"$STATUS\",\"lag_bytes\":$LAG_BYTES,\"threshold_bytes\":$THRESHOLD_BYTES,\"replication_delay\":$REPLICATION_DELAY,\"threshold_seconds\":$THRESHOLD_SECONDS}"
+    OUTPUT="{\"role\":\"$ROLE\",\"timestamp\":\"$TIMESTAMP\",\"status\":\"$STATUS\",\"lag_bytes\":$LAG_BYTES,\"threshold_bytes\":$THRESHOLD_BYTES,\"replication_delay\":$REPLICATION_DELAY,\"threshold_seconds\":$THRESHOLD_SECONDS}"
 
     echo "$OUTPUT"
     [ "$STATUS" == "OUT_OF_SYNC" ] && exit 1 || exit 0
