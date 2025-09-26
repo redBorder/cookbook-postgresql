@@ -64,6 +64,32 @@ action :add do
       notifies :restart, 'service[postgresql]'
     end
 
+    template '/usr/lib/redborder/bin/rb_check_postgresql.sh' do
+      source 'rb_check_postgresql.erb'
+      owner 'root'
+      group 'root'
+      mode '0755'
+      cookbook 'postgresql'
+      retries 2
+    end
+
+    ruby_block 'register_postgresql_health_check' do
+      block do
+        service_id = "postgresql-#{node['hostname']}"
+        json_check = {
+          'Name' => 'postgresql-health-check',
+          'Args' => ['/usr/lib/redborder/bin/rb_check_postgresql.sh'],
+          'Interval' => '60s',
+          'Timeout' => '10s',
+          'Notes' => 'Health check PostgreSQL replication',
+          'ServiceID' => service_id
+        }.to_json
+
+        system("curl -X PUT http://localhost:8500/v1/agent/check/register -d '#{json_check}' &>/dev/null")
+      end
+      action :run
+    end
+
     service 'postgresql' do
       service_name 'postgresql'
       ignore_failure true
