@@ -1,0 +1,79 @@
+#!/bin/bash
+#
+# Health check PostgreSQL replication
+#
+
+THRESHOLD_BYTES=${1:-16777216} # 16MB by default
+THRESHOLD_SECONDS=${2:-180}    # 3 minutes by default
+PGUSER="rep"
+PGMASTERUSER="postgres"
+PGPORT=5432
+DATABASE="postgres"
+TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+ROLE=$(psql -h localhost -U "$PGUSER" -p "$PGPORT" -d "$DATABASE" -t -A \
+    -c "SELECT CASE WHEN pg_is_in_recovery() THEN 'slave' ELSE 'master' END;" 2>/dev/null | tr -d '[:space:]')
+OUTPUT="{\"role\":\"$ROLE\",\"timestamp\":\"$TIMESTAMP\","
+
+if [ "$ROLE" == "master" ]; then
+    # Master: Check if all replication walsender processes are active on the master node
+    REPLICAS=$(psql -h localhost -U "$PGUSER" -p "$PGPORT" -d "$DATABASE" -t -A -F"," \
+        -c "SELECT pid, usename, application_name, client_addr, client_port, backend_start, query_start, state_change, state 
+            FROM pg_stat_activity WHERE backend_type='walsender';")
+
+    REPLICA_ARRAY="["
+    OUT_OF_SYNC=0
+
+    while IFS=',' read -r pid usename app addr port bstart qstart schange state; do
+        [ "$REPLICA_ARRAY" != "[" ] && REPLICA_ARRAY+=","
+        REPLICA_ARRAY+="{\"pid\":$pid,\"usename\":\"$usename\",\"application_name\":\"$app\",\"client_addr\":\"$addr\",\"client_port\":$port,\"backend_start\":\"$bstart\",\"query_start\":\"$qstart\",\"state_change\":\"$schange\",\"state\":\"$state\"}"
+        if [ "$state" != "active" ]; then
+            OUT_OF_SYNC=1
+        fi
+    done <<< "$REPLICAS"
+
+    REPLICA_ARRAY+="]"
+    STATUS="OK"
+    [ "$OUT_OF_SYNC" -eq 1 ] && STATUS="OUT_OF_SYNC"
+
+    OUTPUT+="\"status\":\"$STATUS\",\"replicas\":$REPLICA_ARRAY}"
+
+    echo "$OUTPUT"
+    [ "$STATUS" == "OUT_OF_SYNC" ] && exit 1 || exit 0
+
+elif [ "$ROLE" == "slave" ]; then
+    # Slave: Check replication lag in bytes and delay in seconds on the slave node
+    MASTER_IP=$(psql -h localhost -U "$PGMASTERUSER" -p "$PGPORT" -d "$DATABASE" -t -A \
+        -c "SHOW primary_conninfo;" 2>/dev/null | awk '{for(i=1;i<=NF;i++){if($i ~ /^host=/){split($i,a,/=/); print a[2]}}}')
+
+    if [ -z "$MASTER_IP" ]; then
+        echo "{\"role\":\"slave\",\"timestamp\":\"$TIMESTAMP\",\"status\":\"OUT_OF_SYNC\",\"error\":\"Cannot determine master IP\"}"
+        exit 1
+    fi
+
+    MASTER_LSN=$(psql -h "$MASTER_IP" -U "$PGUSER" -p $PGPORT -d "$DATABASE" -t -A \
+        -c "SELECT pg_current_wal_lsn();" 2>/dev/null | tr -d '[:space:]')
+    SLAVE_LSN=$(psql -h localhost -U "$PGUSER" -p $PGPORT -d "$DATABASE" -t -A \
+        -c "SELECT pg_last_wal_replay_lsn();" 2>/dev/null | tr -d '[:space:]')
+
+    [ -z "$MASTER_LSN" ] || [ -z "$SLAVE_LSN" ] && \
+        { echo "{\"role\":\"slave\",\"timestamp\":\"$TIMESTAMP\",\"status\":\"OUT_OF_SYNC\",\"error\":\"Cannot get LSNs\"}"; exit 1; }
+
+    LAG_BYTES=$(psql -h "$MASTER_IP" -U "$PGUSER" -p $PGPORT -d "$DATABASE" -t -A \
+        -c "SELECT pg_wal_lsn_diff('$MASTER_LSN', '$SLAVE_LSN');" 2>/dev/null | tr -d '[:space:]')
+    [ "$LAG_BYTES" -lt 0 ] && LAG_BYTES=0
+
+    REPLICATION_DELAY=$(psql -h localhost -U "$PGUSER" -p "$PGPORT" -d "$DATABASE" -t -A \
+        -c "SELECT EXTRACT(EPOCH FROM now() - pg_last_xact_replay_timestamp())::int;" 2>/dev/null)
+
+    STATUS="OK"
+    (( LAG_BYTES > THRESHOLD_BYTES || REPLICATION_DELAY > THRESHOLD_SECONDS )) && STATUS="OUT_OF_SYNC"
+
+    OUTPUT+="{\"status\":\"$STATUS\",\"lag_bytes\":$LAG_BYTES,\"threshold_bytes\":$THRESHOLD_BYTES,\"replication_delay\":$REPLICATION_DELAY,\"threshold_seconds\":$THRESHOLD_SECONDS}"
+
+    echo "$OUTPUT"
+    [ "$STATUS" == "OUT_OF_SYNC" ] && exit 1 || exit 0
+
+else
+    echo "{\"role\":\"unknown\",\"timestamp\":\"$TIMESTAMP\",\"status\":\"OUT_OF_SYNC\",\"error\":\"Cannot determine node role\"}"
+    exit 1
+fi
