@@ -82,7 +82,7 @@ action :add do
           'Interval' => '60s',
           'Timeout' => '10s',
           'Notes' => 'Health check PostgreSQL replication',
-          'ServiceID' => service_id
+          'ServiceID' => service_id,
         }.to_json
 
         system("curl -X PUT http://localhost:8500/v1/agent/check/register -d '#{json_check}' &>/dev/null")
