@@ -73,23 +73,6 @@ action :add do
       retries 2
     end
 
-    ruby_block 'register_postgresql_health_check' do
-      block do
-        service_id = "postgresql-#{node['hostname']}"
-        json_check = {
-          'Name' => 'postgresql-health-check',
-          'Args' => ['/usr/lib/redborder/bin/rb_check_postgresql.sh'],
-          'Interval' => '60s',
-          'Timeout' => '10s',
-          'Notes' => 'Health check PostgreSQL replication',
-          'ServiceID' => service_id,
-        }.to_json
-
-        system("curl -X PUT http://localhost:8500/v1/agent/check/register -d '#{json_check}' &>/dev/null")
-      end
-      action :run
-    end
-
     service 'postgresql' do
       service_name 'postgresql'
       ignore_failure true
@@ -134,7 +117,8 @@ action :register do
 
     unless node['postgresql']['registered']
       query = {}
-      query['ID'] = "postgresql-#{node['hostname']}"
+      service_id = "postgresql-#{node['hostname']}"
+      query['ID'] = service_id
       query['Name'] = 'postgresql'
       query['Address'] = ipaddress
       query['Port'] = 5432
@@ -142,6 +126,20 @@ action :register do
 
       execute 'Register service in consul' do
         command "curl -X PUT http://localhost:8500/v1/agent/service/register -d '#{json_query}' &>/dev/null"
+        action :nothing
+      end.run_action(:run)
+
+      health_check_json = {
+        'Name' => 'postgresql-health-check',
+        'Args' => ['/usr/lib/redborder/bin/rb_check_postgresql.sh'],
+        'Interval' => '60s',
+        'Timeout' => '10s',
+        'Notes' => 'Health check PostgreSQL replication',
+        'ServiceID' => service_id,
+      }.to_json
+
+      execute 'Register PostgreSQL Consul Health Check' do
+        command "curl -X PUT http://localhost:8500/v1/agent/check/register -d '#{health_check_json}' &>/dev/null"
         action :nothing
       end.run_action(:run)
 
