@@ -64,15 +64,6 @@ action :add do
       notifies :restart, 'service[postgresql]'
     end
 
-    template '/usr/lib/redborder/bin/rb_check_postgresql.sh' do
-      source 'rb_check_postgresql.erb'
-      owner 'root'
-      group 'root'
-      mode '0755'
-      cookbook 'postgresql'
-      retries 2
-    end
-
     service 'postgresql' do
       service_name 'postgresql'
       ignore_failure true
