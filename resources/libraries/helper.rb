@@ -15,8 +15,15 @@ module Postgresql
     end
 
     def find_master_ip
-      postgres_ips = node['redborder']['cluster_info'].select { |m, _| node['redborder']['managers_per_services']['postgresql'].include?(m) }.map { |_, v| v['ipaddress_sync'] }
-      postgres_ips.first
+      cluster_info = node.dig('redborder', 'cluster_info')
+      postgresql_managers = node.dig('redborder', 'managers_per_services', 'postgresql')
+
+      if cluster_info && postgresql_managers
+        postgres_ips = cluster_info.select { |m, _| postgresql_managers.include?(m) }.map { |_, v| v['ipaddress_sync'] }
+        postgres_ips.first
+      else
+        nil
+      end
     end
   end
 end
