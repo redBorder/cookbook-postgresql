@@ -21,8 +21,6 @@ module Postgresql
       if cluster_info && postgresql_managers
         postgres_ips = cluster_info.select { |m, _| postgresql_managers.include?(m) }.map { |_, v| v['ipaddress_sync'] }
         postgres_ips.first
-      else
-        nil
       end
     end
   end
