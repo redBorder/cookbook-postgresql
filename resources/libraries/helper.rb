@@ -14,22 +14,14 @@ module Postgresql
       routes
     end
 
-    # Queries Serf members to find the master node's IP.
-    def find_master_ip_from_serf(postgresql_hosts)
-      postgresql_master_node = postgresql_hosts.first
-      serf_output = `serf members`
+    def find_master_ip
+      cluster_info = node.dig('redborder', 'cluster_info')
+      postgresql_managers = node.dig('redborder', 'managers_per_services', 'postgresql')
 
-      master_ip = serf_output.lines.find do |line|
-        next unless line.include?('alive')
-
-        node_name = line.split[0]
-        node_name == postgresql_master_node
+      if cluster_info && postgresql_managers
+        postgres_ips = cluster_info.select { |m, _| postgresql_managers.include?(m) }.map { |_, v| v['ipaddress_sync'] }
+        postgres_ips.first
       end
-
-      return unless master_ip
-
-      ip_part = master_ip.split[1]
-      ip_part&.split(':')&.first
     end
   end
 end
