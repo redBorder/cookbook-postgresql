@@ -31,7 +31,7 @@ module Postgresql
     def convert_to_master
       commands = [
         'touch /tmp/postgresql.trigger',
-        'sed -i "/^primary_conninfo/d; /^promote_trigger_file/d" /var/lib/pgsql/data/postgresql.conf'
+        'sed -i "/^primary_conninfo/d; /^promote_trigger_file/d" /var/lib/pgsql/data/postgresql.conf',
       ]
 
       commands.each do |cmd|
