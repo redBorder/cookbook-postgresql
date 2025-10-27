@@ -28,6 +28,18 @@ module Postgresql
       nil
     end
 
+    def convert_to_master
+      commands = [
+        'touch /tmp/postgresql.trigger',
+        'sed -i "/^primary_conninfo/d; /^promote_trigger_file/d" /var/lib/pgsql/data/postgresql.conf'
+      ]
+
+      commands.each do |cmd|
+        full_cmd = "rbcli node execute all -- '#{cmd}'"
+        system(full_cmd)
+      end
+    end
+
     def update_hosts_for_master(new_master_ip)
       hosts_file = '/etc/hosts'
       service_name = 'master.postgresql.service'
@@ -38,7 +50,7 @@ module Postgresql
         hosts_content << "#{new_entry}\n"
         ::File.open(hosts_file, 'w') { |file| file.puts hosts_content }
       rescue => e
-        Chef::Log.error("Error actualizando /etc/hosts: #{e.message}")
+        Chef::Log.error("Error updating /etc/hosts: #{e.message}")
       end
     end
 
