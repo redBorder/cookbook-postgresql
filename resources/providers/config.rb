@@ -41,7 +41,7 @@ action :add do
 
       ruby_block 'sync_if_not_master' do
         block do
-          master_ip = find_master_ip
+          master_ip = find_master_ip(true)
           if master_ip
             local_ips = `hostname -I`.split
             unless local_ips.include?(master_ip)
@@ -78,6 +78,13 @@ end
 
 action :remove do
   begin
+    role = postgres_role
+
+    if role == 'master'
+      new_master_ip = find_master_ip(false)
+      update_hosts_for_master(new_master_ip)
+    end
+
     service 'postgresql' do
       service_name 'postgresql'
       ignore_failure true
