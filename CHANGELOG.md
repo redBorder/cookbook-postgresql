@@ -1,6 +1,12 @@
 cookbook-postgresql CHANGELOG
 ===============
 
+## 0.4.0
+
+  - nilsver
+    - [e0684d7] added fallback
+    - [47bdec7] remove dependency on serf
+
 ## 0.3.1
 
   - jnavarrorb
