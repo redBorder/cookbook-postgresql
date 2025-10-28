@@ -83,8 +83,8 @@ action :remove do
 
     if role == 'master' && virtual_ips['internal']['postgresql']['ip'].nil?
       new_master_ip = find_master_ip(false)
-      update_hosts_for_master(new_master_ip)
       convert_to_master
+      update_hosts_for_master(new_master_ip)
     end
 
     service 'postgresql' do
