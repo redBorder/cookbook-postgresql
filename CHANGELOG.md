@@ -1,6 +1,12 @@
 cookbook-postgresql CHANGELOG
 ===============
 
+## 0.5.0
+
+  - Rafael Gomez
+    - [ac4a2c6] Remove rb_check_postgresql.sh from cookbook and use the one from redborder-manager
+    - [94dd257] health check in action register
+
 ## 0.4.0
 
   - nilsver
