@@ -1,6 +1,11 @@
 cookbook-postgresql CHANGELOG
 ===============
 
+## 0.5.1
+
+  - nilsver
+    - [6da5ee7] pass decryption file
+
 ## 0.5.0
 
   - Rafael Gomez
