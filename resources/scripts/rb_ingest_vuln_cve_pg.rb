@@ -21,7 +21,7 @@ class CVEDatabase
   end
 
   def self.redborder_pg_conn
-    raw = `knife data bag show passwords db_redborder -F json`
+    raw = `knife data bag show passwords db_redborder -F json --secret-file /etc/redborder/encrypted_data_bag_secret`
     clean = raw.lines.reject { |line| line.start_with?('INFO:') }.join
     databag = JSON.parse(clean)
     {
