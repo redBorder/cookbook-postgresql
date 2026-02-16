@@ -133,7 +133,7 @@ class CVEDatabase
       # entries = content['CVE_Items'] || []
       entries = content['vulnerabilities'] || []
       entries.each do |entry|
-        cve_id = entry.dig('cve', 'CVE_data_meta', 'ID')
+        cve_id = entry.dig('cve', 'id')
         begin
           @pg_conn.exec_params(
             "INSERT INTO cves (cve_id, data) VALUES ($1, $2)
