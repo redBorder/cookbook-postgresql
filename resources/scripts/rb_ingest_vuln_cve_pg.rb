@@ -68,8 +68,9 @@ class CVEDatabase
         @cve_files.push(file_json)
       else
         puts "ERROR: JSON file #{file_json} missing after unzip."
-        complete_download = false
-        break
+        # This is not an excuse to keep running, take as much data as possible
+        # complete_download = false
+        # break
       end
     end
 
