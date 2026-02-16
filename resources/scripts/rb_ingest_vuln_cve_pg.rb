@@ -41,8 +41,9 @@ class CVEDatabase
 
   def set_cve_files
     current_year = Time.now.year
+    current_year = 2025 # having some problems with 2026
     (2002..current_year).each do |year|
-      url = "https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-#{year}.json.gz"
+      url = "https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-#{year}.json.gz"
       @cve_url_files << url
     end
   end
