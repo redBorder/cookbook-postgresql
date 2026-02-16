@@ -60,7 +60,8 @@ class CVEDatabase
         break
       end
 
-      system("gunzip -f #{filename}")
+      filepath = @download_path + filename
+      `gzip -dkf #{filepath}`
       file_json = filename.sub(/\.gz$/, '')
 
       if File.exist?(file_json)
@@ -75,7 +76,7 @@ class CVEDatabase
     end
 
     import_to_postgresql if complete_download
-    remove_files
+    # remove_files
     complete_download
   end
 
@@ -129,7 +130,8 @@ class CVEDatabase
     @cve_files.each do |file|
       puts "Processing #{file}"
       content = JSON.parse(File.read(file))
-      entries = content['CVE_Items'] || []
+      # entries = content['CVE_Items'] || []
+      entries = content['vulnerabilities'] || []
       entries.each do |entry|
         cve_id = entry.dig('cve', 'CVE_data_meta', 'ID')
         begin
