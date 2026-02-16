@@ -11,7 +11,7 @@ class CVEDatabase
   attr_accessor :cve_files
 
   def initialize
-    @download_path = '/tmp/'
+    @download_path = '/root/'
     @cve_url_files = []
     @cve_files = []
 
@@ -21,15 +21,21 @@ class CVEDatabase
   end
 
   def self.redborder_pg_conn
-    raw = `knife data bag show passwords db_redborder -F json --secret-file /etc/redborder/encrypted_data_bag_secret`
-    clean = raw.lines.reject { |line| line.start_with?('INFO:') }.join
-    databag = JSON.parse(clean)
+    # TODO: optimize
+    raw = `knife data bag show passwords db_redborder --secret-file /etc/chef/encrypted_data_bag_secret`
+    clean = raw.gsub(/^INFO:.*\n/, '').chomp
+    databag = clean
+              .lines
+              .map(&:strip)
+              .reject(&:empty?)
+              .map { |line| line.split(/:\s+/, 2) }
+              .to_h
     {
       dbname: databag['database'],
       user: databag['username'],
       password: databag['pass'],
       host: databag['hostname'],
-      port: databag['port'],
+      port: databag['port'].to_i,
     }
   end
 
