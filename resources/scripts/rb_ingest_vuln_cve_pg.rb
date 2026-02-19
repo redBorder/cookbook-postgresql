@@ -13,7 +13,7 @@ class CVEDatabase
   attr_accessor :cve_files
 
   def initialize
-    @download_path = '/root/'
+    @download_path = '/tmp/'
     @cve_url_files = []
     @cve_files = []
 
