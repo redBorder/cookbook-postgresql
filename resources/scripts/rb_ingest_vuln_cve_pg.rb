@@ -40,8 +40,7 @@ class CVEDatabase
   end
 
   def set_cve_files
-    # current_year = Time.now.year
-    current_year = 2025 # having some problems with 2026
+    current_year = Time.now.year
     (2002..current_year).each do |year|
       url = "https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-#{year}.json.gz"
       @cve_url_files << url
@@ -53,6 +52,8 @@ class CVEDatabase
     @cve_url_files.each do |url|
       puts "Downloading NVD (MITRE) JSON CVEs file #{url}"
       filename = File.basename(url)
+
+      # TODO: Before downloading we should check if the file is already downloaded and valid, to avoid unnecessary downloads and processing
 
       unless download_gz_file_with_retries(url, filename)
         puts "ERROR: Could not download #{filename} after multiple attempts."
