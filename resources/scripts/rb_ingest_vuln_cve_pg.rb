@@ -6,6 +6,8 @@ require 'zlib'
 require 'pg'
 require 'yaml'
 require 'English'
+# require 'uri'
+# require 'net/http'
 
 class CVEDatabase
   attr_accessor :cve_files
@@ -35,7 +37,7 @@ class CVEDatabase
       user: databag['username'],
       password: databag['pass'],
       host: databag['hostname'],
-      port: databag['port'].to_i,
+      port: databag['port'],
     }
   end
 
@@ -47,6 +49,21 @@ class CVEDatabase
     end
   end
 
+  # def fetch_sha256_from_meta(year)
+  #   meta_url = "https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-#{year}.meta"
+  #   meta_file = "nvdcve-2.0-#{year}.meta"
+
+  #   uri = URI(meta_url)
+  #   File.write(meta_file, Net::HTTP.get(uri))
+
+  #   sha256 = File.readlines(meta_file).reverse_each.find do |line|
+  #     line.start_with?('sha256:')
+  #   end&.split(':', 2)&.last&.strip
+
+  #   puts sha256
+  #   sha256
+  # end
+
   def import_cve_files
     complete_download = true
     @cve_url_files.each do |url|
@@ -54,6 +71,8 @@ class CVEDatabase
       filename = File.basename(url)
 
       # TODO: Before downloading we should check if the file is already downloaded and valid, to avoid unnecessary downloads and processing
+      # https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-#{year}.meta
+      # sha256sum = `curl -s #{url.sub('.json.gz', '.meta')} | grep 'sha256' | awk '{print $2}'`.strip
 
       unless download_gz_file_with_retries(url, filename)
         puts "ERROR: Could not download #{filename} after multiple attempts."
@@ -77,7 +96,7 @@ class CVEDatabase
     end
 
     import_to_postgresql if complete_download
-    # remove_files
+    remove_files
     complete_download
   end
 
@@ -131,7 +150,6 @@ class CVEDatabase
     @cve_files.each do |file|
       puts "Processing #{file}"
       content = JSON.parse(File.read(file))
-      # entries = content['CVE_Items'] || []
       entries = content['vulnerabilities'] || []
       entries.each do |entry|
         cve_id = entry.dig('cve', 'id')
