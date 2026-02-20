@@ -1,6 +1,21 @@
 cookbook-postgresql CHANGELOG
 ===============
 
+## 0.5.2
+
+  - Miguel Negrón
+    - [4f03871] Merge pull request #31 from redBorder/bugfix/#24056_fix_cve_population
+  - ljblancoredborder
+    - [e2f1d41] revert download to tmp
+    - [6f3ee46] revert unnecesary changes, comment unused code
+    - [09b560c] recover download until current year
+    - [b02dd0a] lint
+    - [317f1fc] Adjust 2.0 nvd format for cve
+    - [03e8d86] stop removing already downloaded nvd. We will need our own endpoint. Adjust to 2.0 cve format
+    - [bfbc690] load jsons as much as posible
+    - [de12a21] update nvd endpoing
+    - [99075cf] replace json parsing with ruby hash strcuture
+
 ## 0.5.1
 
   - nilsver
