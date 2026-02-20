@@ -6,6 +6,8 @@ require 'zlib'
 require 'pg'
 require 'yaml'
 require 'English'
+# require 'uri'
+# require 'net/http'
 
 class CVEDatabase
   attr_accessor :cve_files
@@ -21,9 +23,15 @@ class CVEDatabase
   end
 
   def self.redborder_pg_conn
-    raw = `knife data bag show passwords db_redborder -F json --secret-file /etc/redborder/encrypted_data_bag_secret`
-    clean = raw.lines.reject { |line| line.start_with?('INFO:') }.join
-    databag = JSON.parse(clean)
+    # TODO: optimize
+    raw = `knife data bag show passwords db_redborder --secret-file /etc/chef/encrypted_data_bag_secret`
+    clean = raw.gsub(/^INFO:.*\n/, '').chomp
+    databag = clean
+              .lines
+              .map(&:strip)
+              .reject(&:empty?)
+              .map { |line| line.split(/:\s+/, 2) }
+              .to_h
     {
       dbname: databag['database'],
       user: databag['username'],
@@ -36,10 +44,25 @@ class CVEDatabase
   def set_cve_files
     current_year = Time.now.year
     (2002..current_year).each do |year|
-      url = "https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-#{year}.json.gz"
+      url = "https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-#{year}.json.gz"
       @cve_url_files << url
     end
   end
+
+  # def fetch_sha256_from_meta(year)
+  #   meta_url = "https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-#{year}.meta"
+  #   meta_file = "nvdcve-2.0-#{year}.meta"
+
+  #   uri = URI(meta_url)
+  #   File.write(meta_file, Net::HTTP.get(uri))
+
+  #   sha256 = File.readlines(meta_file).reverse_each.find do |line|
+  #     line.start_with?('sha256:')
+  #   end&.split(':', 2)&.last&.strip
+
+  #   puts sha256
+  #   sha256
+  # end
 
   def import_cve_files
     complete_download = true
@@ -47,13 +70,18 @@ class CVEDatabase
       puts "Downloading NVD (MITRE) JSON CVEs file #{url}"
       filename = File.basename(url)
 
+      # TODO: Before downloading we should check if the file is already downloaded and valid, to avoid unnecessary downloads and processing
+      # https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-#{year}.meta
+      # sha256sum = `curl -s #{url.sub('.json.gz', '.meta')} | grep 'sha256' | awk '{print $2}'`.strip
+
       unless download_gz_file_with_retries(url, filename)
         puts "ERROR: Could not download #{filename} after multiple attempts."
         complete_download = false
         break
       end
 
-      system("gunzip -f #{filename}")
+      filepath = @download_path + filename
+      `gzip -dkf #{filepath}`
       file_json = filename.sub(/\.gz$/, '')
 
       if File.exist?(file_json)
@@ -61,8 +89,9 @@ class CVEDatabase
         @cve_files.push(file_json)
       else
         puts "ERROR: JSON file #{file_json} missing after unzip."
-        complete_download = false
-        break
+        # This is not an excuse to keep running, take as much data as possible
+        # complete_download = false
+        # break
       end
     end
 
@@ -121,9 +150,9 @@ class CVEDatabase
     @cve_files.each do |file|
       puts "Processing #{file}"
       content = JSON.parse(File.read(file))
-      entries = content['CVE_Items'] || []
+      entries = content['vulnerabilities'] || []
       entries.each do |entry|
-        cve_id = entry.dig('cve', 'CVE_data_meta', 'ID')
+        cve_id = entry.dig('cve', 'id')
         begin
           @pg_conn.exec_params(
             "INSERT INTO cves (cve_id, data) VALUES ($1, $2)
