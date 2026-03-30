@@ -49,21 +49,6 @@ class CVEDatabase
     end
   end
 
-  # def fetch_sha256_from_meta(year)
-  #   meta_url = "https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-#{year}.meta"
-  #   meta_file = "nvdcve-2.0-#{year}.meta"
-
-  #   uri = URI(meta_url)
-  #   File.write(meta_file, Net::HTTP.get(uri))
-
-  #   sha256 = File.readlines(meta_file).reverse_each.find do |line|
-  #     line.start_with?('sha256:')
-  #   end&.split(':', 2)&.last&.strip
-
-  #   puts sha256
-  #   sha256
-  # end
-
   def import_cve_files
     complete_download = true
     @cve_url_files.each do |url|
@@ -73,14 +58,13 @@ class CVEDatabase
       # TODO: Before downloading we should check if the file is already downloaded and valid, to avoid unnecessary downloads and processing
       # https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-#{year}.meta
       # sha256sum = `curl -s #{url.sub('.json.gz', '.meta')} | grep 'sha256' | awk '{print $2}'`.strip
-
-      unless download_gz_file_with_retries(url, filename)
+      filepath = @download_path + filename
+      unless download_gz_file_with_retries(url, filepath)
         puts "ERROR: Could not download #{filename} after multiple attempts."
         complete_download = false
         break
       end
 
-      filepath = @download_path + filename
       `gzip -dkf #{filepath}`
       file_json = filename.sub(/\.gz$/, '')
 
