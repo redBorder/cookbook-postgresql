@@ -1,6 +1,11 @@
 cookbook-postgresql CHANGELOG
 ===============
 
+## 0.5.3
+
+  - manegron
+    - [9f2b0a5] Upload cookbook only if opscode-erchef is active
+
 ## 0.5.2
 
   - Miguel Negrón
