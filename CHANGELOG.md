@@ -1,6 +1,11 @@
 cookbook-postgresql CHANGELOG
 ===============
 
+## 0.5.4
+
+  - manegron
+    - [3bed88c] Fix script rb_ingest_vuln_cve_pg
+
 ## 0.5.3
 
   - manegron
