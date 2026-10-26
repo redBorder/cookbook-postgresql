@@ -74,15 +74,16 @@ class CVEDatabase
       # https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-#{year}.meta
       # sha256sum = `curl -s #{url.sub('.json.gz', '.meta')} | grep 'sha256' | awk '{print $2}'`.strip
 
-      unless download_gz_file_with_retries(url, filename)
+      # Full paths: the script can be run from any directory
+      filepath = File.join(@download_path, filename)
+      unless download_gz_file_with_retries(url, filepath)
         puts "ERROR: Could not download #{filename} after multiple attempts."
         complete_download = false
         break
       end
 
-      filepath = @download_path + filename
       `gzip -dkf #{filepath}`
-      file_json = filename.sub(/\.gz$/, '')
+      file_json = filepath.sub(/\.gz$/, '')
 
       if File.exist?(file_json)
         system("dos2unix #{file_json}")
